@@ -1,0 +1,71 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <style>
+            table{
+                border-spacing:10px;
+                border-collapse: separate;
+            }
+        </style>
+    </head>
+
+    <body>
+        <a style="font-size:large; float:right" href="/logout">Logout</a>
+
+        <div>
+            <span>Add a new meal entry:</span>
+            <br>
+            <a style="margin-top:1rem; font-size:3rem !important" class="btn btn-primary btn-lg" href="/existing">Eat an Existing Meal</a>
+            <br>
+            <a style="margin-top:1rem; font-size:3rem !important" class="btn btn-primary btn-lg" href="/adhoc">Create a Meal</a>
+        </div>
+        <div>
+            <span>Add a new ingredient/recipe </span>
+            <br>
+            <a style="margin-top:1rem; font-size:3rem !important" class="btn btn-primary btn-lg" href="/add_food">Add Ingredient</a>
+            <br>
+            <a style="margin-top:1rem; font-size:3rem !important" class="btn btn-primary btn-lg" href="/add_recipe">Add Recipe</a>
+        </div>
+        <br>
+        <form action="/" method="post">
+            <label>Enter today's weight:</label>
+            <input id="weight_input" name="weight">
+            <br>
+            <input type="submit" name="action" value="Enter weight">
+        </form>
+        
+        <br>
+		<div id="weightsContainer">
+            <ul>
+                <% for( var i = 0; i < weights.length; i++){%>
+                    <li><strong><%= weights[i].date%></strong>: <%= weights[i].weight%></li> 
+                <% } %>
+            </ul>
+		</div>
+		<div id="calEntriesContainer">
+            <table>
+                <tbody id="ingredients_container">
+                    <tr>
+                        <th>Date</th>
+                        <th>Calories</th>
+                        <th>Fat</th>
+                        <th>Carbs</th>
+                        <th>Fiber</th>
+                        <th>Protein</th>
+                    </tr>
+                    <% for( var i = 0; i < cal_entries.length; i++){%>
+                        <%var entry = cal_entries[i]; %>
+                        <tr>
+                            <td><%= entry.entry_datetime%></td> 
+                            <td><%= entry.calories%></td>
+                            <td><%= entry.fat%></td>
+                            <td><%= entry.carb%></td>
+                            <td><%= entry.fiber%></td>
+                            <td><%= entry.protein%></td>
+                        </tr> 
+                    <% } %>
+                </tbody>
+            </table>
+		</div>
+    </body>
+</html>

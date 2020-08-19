@@ -1,0 +1,135 @@
+{
+    "foods": [
+        {
+            "name": "garbanzo beans",
+            "unit": "cup",
+            "amount": ".5",
+            "calorie": "110",
+            "fat": "2",
+            "carb": "19",
+            "protein": "6",
+            "fiber": "4"
+        },
+        {
+            "name": "extra virgin olive oil",
+            "unit": "tbsp",
+            "amount": "1",
+            "calorie": "130",
+            "fat": "14",
+            "carb": "0",
+            "protein": "0",
+            "fiber": "0"
+        },
+        {
+            "name": "beefless ground (Gardein)",
+            "unit": "gram",
+            "amount": "87",
+            "calorie": "110",
+            "fat": "2",
+            "carb": "9",
+            "fiber": "5",
+            "protein": "18"
+        },
+        {
+            "name": "chia seeds",
+            "unit": "tbsp",
+            "amount": "3",
+            "calorie": "150",
+            "fat": "9",
+            "carb": "13",
+            "fiber": "10",
+            "protein": "5"
+        },
+        {
+            "name": "chia seeds",
+            "unit": "gram",
+            "amount": "30",
+            "calorie": "150",
+            "fat": "9",
+            "carb": "13",
+            "fiber": "10",
+            "protein": "5"
+        },
+        {
+            "name": "walnut",
+            "unit": "cup",
+            "amount": ".25",
+            "calorie": "200",
+            "fat": "20",
+            "carb": "4",
+            "fiber": "2",
+            "protein": "5"
+        },
+        {
+            "name": "walnut",
+            "unit": "gram",
+            "amount": "30",
+            "calorie": "200",
+            "fat": "20",
+            "carb": "4",
+            "fiber": "2",
+            "protein": "5"
+        },
+        {
+            "name": "peanut butter (Kirkland)",
+            "unit": "tbsp",
+            "amount": "2",
+            "calorie": "180",
+            "fat": "15",
+            "carb": "7",
+            "fiber": "3",
+            "protein": "8"
+        },
+        {
+            "name": "peanut butter (Kirkland)",
+            "unit": "gram",
+            "amount": "32",
+            "calorie": "180",
+            "fat": "15",
+            "carb": "7",
+            "fiber": "3",
+            "protein": "8"
+        },
+        {
+            "name": "honey",
+            "unit": "tbsp",
+            "amount": "1",
+            "calorie": "60",
+            "fat": "0",
+            "carb": "17",
+            "fiber": "0",
+            "protein": "0"
+        },
+        {
+            "name": "honey",
+            "unit": "gram",
+            "amount": "21",
+            "calorie": "60",
+            "fat": "0",
+            "carb": "17",
+            "fiber": "0",
+            "protein": "0"
+        },
+        {
+            "name": "paneer (Gopi)",
+            "unit": "oz",
+            "amount": "1",
+            "calorie": "90",
+            "fat": "7",
+            "carb": "1",
+            "fiber": "0",
+            "protein": "7"
+        },
+        {
+            "name": "paneer (Gopi)",
+            "unit": "g",
+            "amount": "28",
+            "calorie": "90",
+            "fat": "7",
+            "carb": "1",
+            "fiber": "0",
+            "protein": "7"
+        }
+        
+    ]
+}
