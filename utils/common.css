@@ -1,0 +1,7 @@
+.totals td{
+    font-weight:bold;
+}
+table{
+    border-spacing:10px;
+    border-collapse: separate;
+}

@@ -158,7 +158,7 @@ module.exports = {
         });
     },
     enterCalEntry: function (username, nutrients) {
-        let enter_cal_entry_query = "INSERT INTO cal_entry (username, entry_datetime, calories, fat, carb, protein, fiber) VALUES (?,datetime('now', 'localtime'),?,?,?,?,?)";
+        let enter_cal_entry_query = "INSERT INTO cal_entry (username, entry_datetime, calories, fat, carb, fiber, protein) VALUES (?,datetime('now', 'localtime'),?,?,?,?,?)";
         let values = [username];
         values = values.concat(nutrients);
         db.run(enter_cal_entry_query, values, function (err) {

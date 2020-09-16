@@ -9,6 +9,7 @@ var server = express();
 server.use(cookieParser());
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({extended: true}));
+server.use(express.static(path.join(__dirname, '../utils')));
 server.set("view engine", "ejs");
 
 //TODO it'd be better to make every url first check for the login and do that redirect, and if they're logged in take them to the page they wanted to go normally? (though doesn't this never resolve?)
