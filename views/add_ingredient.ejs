@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js" type='text/javascript'></script>
+        <style>
+            label, .lone-input, div{
+                margin-top: 8px;
+                display: block;
+                margin-left: 8px;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="ing_form">
+            <label for="ing_name">Name:</label>
+            <input class="lone-input" id="ing_name" name="ing_name">
+
+            <div id="servings_container">
+                <span>Servings</span>
+            </div> 
+
+            <label for="ing_calorie">Calories:</label>
+            <input class="lone-input" type="number" step="any" min="0" id="ing_calorie" name="ing_calorie">
+
+            <label for="ing_fat">Fat:</label>
+            <input class="lone-input" type="number" step="any" min="0" id="ing_fat" name="ing_fat">
+
+            <label for="ing_carb">Carb:</label>
+            <input class="lone-input" type="number" step="any" min="0" id="ing_carb" name="ing_carb">
+
+            <label for="ing_fiber">Fiber:</label>
+            <input class="lone-input" type="number" step="any" min="0" id="ing_fiber" name="ing_fiber">
+
+            <label for="ing_protein">Protein:</label>
+            <input class="lone-input" type="number" step="any" min="0" id="ing_protein" name="ing_protein">
+
+            <input class="lone-input" id="submit_btn" type="button" value="Add Ingredient">
+        </div>
+        <script>
+            let units_list = ["g", "tbsp", "tsp", "cup", "mL", "oz"];
+            let used_units_list = [];
+            function add_serving_pair(){ 
+                let serv_container = $("div[id='servings_container']");
+                let num_pairings = serv_container.find("button").length;
+
+                let remaining_units = units_list.filter( ele => !used_units_list.includes(ele));
+                let unit_input = `<select style="width:6.5rem" id='unit_${num_pairings}'><option value='none'>Select unit</option>`;
+                for(let unit of remaining_units){
+                    unit_input += `<option value=${unit}>${unit}</option>`;
+                }
+                unit_input += "</select>";
+                
+                let amount_input = `<input id='amount_${num_pairings}' step="any" type="number" min="0" placeholder='10'></input>`;
+                let serv_add_btn = `<button id='add_serving_btn' type='button' class='btn btn-sm btn-primary'>Add</button>`;
+
+                let serv_pairing = `<div> ${unit_input}${amount_input}${serv_add_btn}</div>`;
+
+                serv_container.append(serv_pairing);
+
+                $("[id='add_serving_btn']").on("click", (e) => {
+                    if(serv_container.children().length > units_list.length){
+                        return;
+                    }
+                    let $this = $(e.target);
+                    $this.off("click");
+                    $this.text("Del");
+                    $this.attr("id", "del_serving_btn");
+                    $this.on("click", () => {
+                        let select = $this.parent().find("select"); 
+                        let select_idx = used_units_list.indexOf(select.val()); 
+                        used_units_list.splice(select_idx, 1);
+                        select.val("none");
+                        select.trigger("change");
+
+                        $this.parent().remove() 
+                    });
+
+                    add_serving_pair();
+                });
+
+                $(`[id='unit_${num_pairings}`).on("change", (e) => {
+                    used_units_list = []
+                    let unit_selects = $("select[id^='unit']");
+                    unit_selects.each( function(){
+                        let select_val = $(this).val();
+                        if(select_val != "none"){
+                            used_units_list.push(select_val);
+                        }
+                    });
+
+                    unit_selects.each( function(){
+                        $(this).find("option:not(:selected)[value!='none']").remove();
+
+                        let remaining_units = units_list.filter( ele => !used_units_list.includes(ele));
+                        for(let unit of remaining_units){
+                            $(this).append(`<option value=${unit}>${unit}</option>`);
+                        }
+                    });
+                });
+            }
+
+            $(document).ready(function(){
+                add_serving_pair()
+                $("#submit_btn").on("click", function(e){
+                    let nutrient_info = [
+                        $("#ing_calorie").val(),
+                        $("#ing_fat").val(),
+                        $("#ing_carb").val(),
+                        $("#ing_fiber").val(),
+                        $("#ing_protein").val()
+                    ];
+
+                    let units = $("select[id^='unit'] option:selected[value!='none']")
+                                .map(function(){return this.value})
+                                .get();
+
+                    let amounts = $("input[id^='amount']")
+                                .map(function(){return parseFloat(this.value)})
+                                .get();
+                    $.ajax({
+                            type: 'post',
+                            url: '/add_ingredient',
+                            data: {
+                                ingredient_name: $("#ing_name").val(),  
+                                nutrients: nutrient_info,
+                                units : units,
+                                amounts : amounts
+                            },
+                            dataType: 'json'
+                        })
+                        .done(function(maybeError){
+                            if(maybeError.err != ""){
+                                let warning_container = $("#warning_container");
+                                warning_container.text(maybeError.err);
+                                warning_container.show();
+                            }
+                            else{
+                                $("#warning_container").hide();
+                            }
+                        });
+                });
+            });
+        </script>
+    </body>
+</html>

@@ -110,9 +110,9 @@ server.post("/login/create_account", function(req:any, res:any){
 //Display the ad-hoc meal page
 server.get("/adhoc", function(req:any, res:any){
     if(is_logged_in(req)){
-        sqlite.getAllFoods(function (foods_list:string[]){   
+        sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
             sqlite.getAllRecipes(function(recipes_list:string[]){
-                res.render("add_meal_adhoc", {foods: foods_list, recipes: recipes_list});
+                res.render("add_meal_adhoc", {ingredients: ingredients_list, recipes: recipes_list});
             });
         });
     }
@@ -133,31 +133,25 @@ server.get("/existing", function(req:any, res:any){
     }
 });
 
-server.get("/add_food", function(req:any, res:any){
-    res.render("add_food");
+server.get("/add_ingredient", function(req:any, res:any){
+    res.render("add_ingredient");
 });
 
-server.post("/add_food", function(req:any, res:any){
-    let amount = parseFloat(req.body.ing_size);
-    let calories = parseFloat(req.body.ing_calorie);
-    let fat = parseFloat(req.body.ing_fat);
-    let carb = parseFloat(req.body.ing_carb);
-    let protein = parseFloat(req.body.ing_protein);
-    let fiber = parseFloat(req.body.ing_fiber);
-
-    sqlite.enterFood(req.body.ing_name, req.body.ing_unit, amount, calories, fat, carb, protein, fiber, function(){
-        res.redirect("/add_food");
+server.post("/add_ingredient", function(req:any, res:any){
+    sqlite.enterIngredient(req.body.ingredient_name, req.body.nutrients, req.body.units, req.body.amounts, 
+    function(err_msg:string){
+        res.json({err:err_msg});
     });   
 });
 
 server.get("/add_recipe", function(req:any, res:any){
-    sqlite.getAllFoods(function (foods_list:string[]){   
-        res.render("add_recipe", {foods: foods_list});
+    sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
+        res.render("add_recipe", {ingredients: ingredients_list});
     });
 });
 
 server.post("/add_recipe", function(req:any, res:any){
-    sqlite.enterRecipe(req.body.recipe_name, req.body.foods, 
+    sqlite.enterRecipe(req.body.recipe_name, req.body.ingredients, 
     function(){
         //Success message
         res.json({err:""});
@@ -200,9 +194,9 @@ server.post("/enter_meal_cal_entry", function(req:any, res:any){
                             );
 });
 
-server.post("/get_food", function(req:any, res:any){
-    sqlite.getFood(req.body.food_name, function(food_info:string[]){
-        res.send(food_info);
+server.post("/get_ingredient", function(req:any, res:any){
+    sqlite.getIngredient(req.body.ingredient_name, function(ingredient_info:string[]){
+        res.send(ingredient_info);
     });
 });
 

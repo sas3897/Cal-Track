@@ -53,60 +53,61 @@ function add_ingredient(nutrient_ids){
 
     $.ajax({
         type: 'post',
-        url: '/get_food',
-        data: {food_name: ingredient_name},
+        url: '/get_ingredient',
+        data: {ingredient_name: ingredient_name},
         dataType: 'json'
     })
     .done(function(ingredient_info){
-        var first_ing_entry = ingredient_info[0];
-        var food_name = first_ing_entry.food_name;
-        var food_id = first_ing_entry.food_id;
-        var unit_amount_map = {};
-        for(var idx in ingredient_info){
-            let unit = ingredient_info[idx].unit;
-            unit_amount_map[unit] = parseFloat(ingredient_info[idx].amount);
+        let nutr_info = ingredient_info.nutr_info;
+        let ingredient_name = nutr_info.ingredient_name;
+        let unit_amount_map = {};
+        for(let entry of ingredient_info.units){
+            unit_amount_map[entry.unit] = parseFloat(entry.amount);
         }
 
         //Check if it already was added to the page
         //TODO add a "remove ingredient" button
-        var maybeEntry = $("#" + food_id);
+        var maybeEntry = $(`[id='${ingredient_name}']`);
         if(maybeEntry.length === 0){
             $("#ingredients_container").append(
-                `<tr id='${food_id}'>` +
-                `<td id='ing_name'>${food_name}</td>` +
-                "<td><select id='unit'></select></td>" +
-                `<td><input id='amount' type='number' step='any' value='${first_ing_entry.amount}'></input></td>` +
-                `<td id='${nutrient_ids[0]}'>${first_ing_entry.calories}</td>` +
-                `<td id='${nutrient_ids[1]}'>${first_ing_entry.fat}</td>` +
-                `<td id='${nutrient_ids[2]}'>${first_ing_entry.carb}</td>` +
-                `<td id='${nutrient_ids[3]}'>${first_ing_entry.fiber}</td>` +
-                `<td id='${nutrient_ids[4]}'>${first_ing_entry.protein}</td>` +
-                `<input id='hid_prev_unit' type='hidden' value='${first_ing_entry.unit}'></input>` +
+                `<tr id='${ingredient_name}'>` +
+                    `<td id='ing_name'>${ingredient_name}</td>` +
+                    "<td><select id='unit'></select></td>" +
+                    `<td><input id='amount' type='number' step='any'></input></td>` +
+                    `<td id='${nutrient_ids[0]}'>${nutr_info.calories}</td>` +
+                    `<td id='${nutrient_ids[1]}'>${nutr_info.fat}</td>` +
+                    `<td id='${nutrient_ids[2]}'>${nutr_info.carb}</td>` +
+                    `<td id='${nutrient_ids[3]}'>${nutr_info.fiber}</td>` +
+                    `<td id='${nutrient_ids[4]}'>${nutr_info.protein}</td>` +
+                    `<input id='hid_ratio' type='hidden' value=1></input>` + 
                 "</tr>"
             );
 
             //No longer a maybe, in this case
-            maybeEntry = $("#" + food_id);
-            var units = maybeEntry.find("[id='unit']");
+            maybeEntry = $(`[id='${ingredient_name}']`);
+            let units = maybeEntry.find("[id='unit']");
+            let amount = maybeEntry.find("#amount");
+            let first_unit = true;
 
-            for(var idx in ingredient_info){
-                units.append(`<option>${ingredient_info[idx].unit}</option>`);
+            for(let unit of Object.keys(unit_amount_map)){
+                if(first_unit){
+                    amount.val(unit_amount_map[unit]);
+                    first_unit=false;
+                }
+                units.append(`<option>${unit}</option>`);
             }
-            units.on('change', function(){
-                //TODO just change this over to a map tracked within the JS, no hidden elements
-                //The ratio between the current unit's serving size
-                let prev_unit = maybeEntry.find("#hid_prev_unit");
-                let curr_amount_ratio = parseFloat(maybeEntry.find("[id='amount']").val())/unit_amount_map[prev_unit.val()];
-                let curr_amount = maybeEntry.find("#amount");
-                curr_amount.val(unit_amount_map[units.val()] * curr_amount_ratio);
-                prev_unit.val(this.value);
 
+            //The ratio between the current unit's serving size
+            let curr_amount_ratio = 1;
+            units.on('change', function(){
+                amount.val(unit_amount_map[units.val()] * curr_amount_ratio);
             });
-            maybeEntry.find("#amount").on('change', function(){
-                let curr_amount_ratio = parseFloat(maybeEntry.find("[id='amount']").val())/unit_amount_map[units.val()];
+            amount.on('change', function(){
+                curr_amount_ratio = parseFloat(maybeEntry.find("[id='amount']").val())/unit_amount_map[units.val()];
+                maybeEntry.find('#hid_ratio').val(curr_amount_ratio);
                 nutrient_ids.forEach(function(id){
                     let nutrient = maybeEntry.find(`#${id}`);
-                    nutrient.text(parseFloat(first_ing_entry[id])*curr_amount_ratio);
+                    nutrient.text(parseFloat(nutr_info[id])*curr_amount_ratio);
                 })
                 $("#ingredients_container").trigger('update');
             });
