@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose(); 
-var db = new sqlite3.Database('/media/external_1/Cal-Track/cal_track.db');
+
+let db = new sqlite3.Database('/media/external_1/Cal-Track/cal_track.db');
 
 module.exports = {
     getAllIngredientNames: function(callback:any){

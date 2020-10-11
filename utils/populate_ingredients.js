@@ -2,13 +2,14 @@
 
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
+const source_filepath = 'ingredients.json';
 
-var db = new sqlite3.Database('/media/external_1/Cal-Track/cal_track.db');
+let db = new sqlite3.Database('/media/external_1/Cal-Track/cal_track.db');
 
-let foods = JSON.parse(fs.readFileSync('foods.json')).foods;
+let foods = JSON.parse(fs.readFileSync(source_filepath)).ingredients;
 
-var serving_insert_query = "INSERT INTO ingredient_servings(ingredient_name, calories, fat, carb, protein, fiber) VALUES ";
-var unit_insert_query = "INSERT INTO ingredient_serving_units(ingredient_name, unit, amount) VALUES "
+let serving_insert_query = "INSERT INTO ingredient_servings(ingredient_name, calories, fat, carb, protein, fiber) VALUES ";
+let unit_insert_query = "INSERT INTO ingredient_serving_units(ingredient_name, unit, amount) VALUES "
 
 for(let food_idx in foods){
     let entry = foods[food_idx];

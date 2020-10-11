@@ -1,11 +1,11 @@
 //Import dependencies
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var bodyParser = require("body-parser");
-var sqlite = require("./db_adapter"); //Local file dependency
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
+const sqlite = require("./db_adapter"); //Local file dependency
 
-var server = express();
+let server = express();
 server.use(cookieParser());
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({extended: true}));

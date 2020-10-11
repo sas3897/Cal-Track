@@ -1,3 +1,11 @@
+$(document).ready(function() {
+    let navbar = $('#nav_bar_container');
+    if(navbar != null){
+        navbar.load('shared_views/nav_bar.html');
+    }
+});
+
+
 function total_up(id){
     let total = 0;
     $(`[id='${id}']`).each(function(){
