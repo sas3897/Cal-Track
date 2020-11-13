@@ -5,62 +5,286 @@
 
         <link rel="stylesheet" href="bootstrap.min.css">
         <link rel="stylesheet" href="common.css">
+        <style>
+            .cal_entry{
+                padding-left: 8px;
+            }
+        </style>
     </head>
 
     <body>
         <div id="nav_bar_container">
         </div>
 
-        <div>
-            <span>Add a new meal entry:</span>
-            <br>
-            <a style="margin-top:1rem; font-size:3rem !important" class="btn btn-primary btn-lg" href="/existing">Eat an Existing Meal</a>
-            <br>
-            <a style="margin-top:1rem; font-size:3rem !important" class="btn btn-primary btn-lg" href="/adhoc">Create a Meal</a>
-        </div>
-        <div>
-            <a style="margin-top:1rem; font-size:3rem !important" class="btn btn-primary btn-lg" href="/add_recipe">Add Recipe</a>
-        </div>
-        <br>
-        <form action="/" method="post">
-            <label>Enter today's weight:</label>
-            <input id="weight_input" name="weight">
-            <br>
-            <input type="submit" name="action" value="Enter weight">
-        </form>
-        
-        <br>
-		<div id="weightsContainer">
-            <ul>
-                <% for( var i = 0; i < weights.length; i++){%>
-                    <li><strong><%= weights[i].date%></strong>: <%= weights[i].weight%></li> 
-                <% } %>
-            </ul>
-		</div>
-		<div id="calEntriesContainer">
-            <table>
-                <tbody id="ingredients_container">
-                    <tr>
-                        <th>Date</th>
-                        <th>Calories</th>
-                        <th>Fat</th>
-                        <th>Carbs</th>
-                        <th>Fiber</th>
-                        <th>Protein</th>
-                    </tr>
-                    <% for( var i = 0; i < cal_entries.length; i++){%>
-                        <%var entry = cal_entries[i]; %>
+        <div id="left_container" style="width: 50%; float:left;">
+            <div id="weights_container" style="height: 40%; margin-left: 16px; margin-top: 16px; ">
+                <div id="weights_form">
+                    <form action="/" method="post">
+                        <label>Enter today's weight:</label>
+                        <div>
+                            <input id="weight_input" name="weight">
+                            <input type="submit" name="action" value="Enter weight">
+                        </div>
+                    </form>
+                </div>
+                <div id="weights_options">
+                    <label for="weight_weekly">Past Week</label>
+                    <input type="radio" id="weight_weekly" name="weight_timespan" value="week" checked="checked"></input>
+
+                    <label for="weight_monthly">Past Month</label>
+                    <input type="radio" id="weight_monthly" name="weight_timespan" value="month"></input>
+
+                    <label for="weight_yearly">Past Year</label>
+                    <input type="radio" id="weight_yearly" name="weight_timespan" value="year"></input>
+                </div>
+                <div id="weights_list">
+                    <ul>
+                        <% for( var i = 0; i < weights.length; i++){%>
+                            <li><strong><%= weights[i].entry_date%></strong>: <%= weights[i].weight%> lb.</li> 
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+            <div id="calEntriesContainer" style="height: 60%; margin-left: 6px; margin-top: 16px;">
+                <table>
+                    <tbody id="cal_entries_container">
                         <tr>
-                            <td><%= entry.entry_datetime%></td> 
-                            <td><%= entry.calories%></td>
-                            <td><%= entry.fat%></td>
-                            <td><%= entry.carb%></td>
-                            <td><%= entry.fiber%></td>
-                            <td><%= entry.protein%></td>
-                        </tr> 
-                    <% } %>
-                </tbody>
-            </table>
-		</div>
+                            <th>Time</th>
+                            <th>Calories</th>
+                            <th>Fat</th>
+                            <th>Carbs</th>
+                            <th>Fiber</th>
+                            <th>Protein</th>
+                        </tr>
+                        <% let prev_date = "" %>
+                        <% for(let i = 0; i < cal_entries.length; i++){%>
+                            <%let entry = cal_entries[i]; %>
+                            <% if(entry.dt != prev_date){ %>
+                            <% prev_date = entry.dt; %>
+                                <tr><td style="font-weight:bolder"><%= entry.dt %></td></tr>
+                            <% } %>
+                            <tr>
+                                <td class="cal_entry"><%= entry.tm%></td>
+                                <td><%= entry.calories%></td>
+                                <td><%= entry.fat%></td>
+                                <td><%= entry.carb%></td>
+                                <td><%= entry.fiber%></td>
+                                <td><%= entry.protein%></td>
+                            </tr> 
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="right_container" style="width:50%; float:right;">
+            <div style="margin: auto;width: 20%;text-align: center;min-width: auto;" class="alert alert-danger" id="warning_container">
+                <% if(locals.err_msg){ %>
+                <%= err_msg %>
+                <% } %>
+            </div>
+            <script>
+                if(<%= locals.err_msg === undefined %>){
+                    $("#warning_container").hide();
+                }
+            </script>
+            <div id="ingredients_options_container">
+                <select id="ingredients_list">
+                <% for( var i = 0; i < ingredients.length; i++){%>
+                    <%var ingredient_name = ingredients[i].ingredient_name; %>
+                    <option value="<%= ingredient_name%>"><%= ingredient_name%></option> 
+                <% } %>
+                </select>
+                <input type="button" id="add_ingredient_btn" value="Add Ingredient"></input>
+            </div>
+            
+            <div id="recipes_options_container">
+                <select id="recipes_list">
+                <% for( var i = 0; i < recipes.length; i++){%>
+                    <%var recipe_name = recipes[i].recipe_name; %>
+                    <option value="<%= recipe_name%>"><%= recipe_name%></option> 
+                <% } %>
+                </select>
+                <input type="button" id="add_recipe_ings_btn" value="Add From Recipe"></input>
+            </div>
+            <div>
+                <table>
+                    <tbody id="ingredients_container">
+                        <tr>
+                            <th>Name</th>
+                            <th>Unit</th>
+                            <th>Amount</th>
+                            <th>Calories</th>
+                            <th>Fat</th>
+                            <th>Carbs</th>
+                            <th>Fiber</th>
+                            <th>Protein</th>
+                        </tr>
+                    </tbody>
+                    <tfoot id="totals_container"></tfoot>
+                </table>
+            </div>
+            <div id="submit_container">
+                <div style="width:100%">Any ingredients with amount 0 will not be included.</div>
+                <input id="meal_name_input"></input>
+                <input type="number" id="meal_weight_input"></input>
+                <input type="submit" id="enter_meal_btn" name="action" value="Save to Fridge">
+            </div>
+            <input type="submit" id="one_off_btn" name="action" value="I Ate It!">
+
+            <div id="scripts_container">
+                <script>
+                    $(document).ready(function(){
+                        var nutrient_ids = ["calories", "fat", "carb", "fiber", "protein"]
+                        //Add the ingredient to the list
+                        $("#add_ingredient_btn").on('click', function(e){
+                            add_ingredient(nutrient_ids);
+                        });
+                        
+
+                        $("#ingredients_container").on('update', function(){
+                            update_totals();
+                        });
+
+                        $("#add_recipe_ings_btn").on('click', function(e){
+                            var recipe_name = $('select[id=recipes_list]').val();
+
+                            $.ajax({
+                                type: 'post',
+                                url: '/get_recipe_ingredients',
+                                data: {recipe_name: recipe_name},
+                                dataType: 'json'
+                            })
+                            .done(function(ingredients_info){
+                                //TODO load the recipe ingredients onto the page
+                                console.log(ingredients_info);
+                            });
+                        });
+
+                        function getNutrientTotals(){
+                            let ingredient_rows = $("#ingredients_container tr");
+                            //There's always a header row we have to ignore
+                            //TODO replace this with a more elegant error message box
+                            if(ingredient_rows.length <= 1){
+                                alert("You need to have at least one ingredient!");
+                                return;
+                            }
+                            
+                            let nutrients_list = [
+                                $("#calories_total").text(),
+                                $("#fat_total").text(),
+                                $("#carbs_total").text(),
+                                $("#fiber_total").text(),
+                                $("#protein_total").text()
+                            ]
+
+                            return nutrients_list;
+                        }
+
+                        $("#enter_meal_btn").on('click', function(evt){
+                            let meal_name = $("#meal_name_input").val(); 
+                            let meal_weight = $("#meal_weight_input").val();
+                            //TODO replace this with a more elegant error message box
+                            if(meal_name == "" || meal_weight == ""){
+                                alert("You must provide a name and weight!");
+                                return;
+                            }
+                            
+                            $.ajax({
+                                type: 'post',
+                                url: '/add_meal',
+                                data: {
+                                    meal_name: meal_name, 
+                                    meal_weight: parseFloat(meal_weight), 
+                                    nutrients: getNutrientTotals()
+                                },
+                                dataType: 'json'
+                            })
+                            .done(function(maybeError){
+                                if(maybeError.err != ""){
+                                    let warning_container = $("#warning_container");
+                                    warning_container.text(maybeError.err);
+                                    warning_container.show();
+                                }
+                                else{
+                                    $("#warning_container").hide();
+                                }
+                            });
+
+                        });
+
+                        $("#one_off_btn").on('click', function(e){
+                            $.ajax({
+                                type: 'post',
+                                url: '/enter_cal_entry',
+                                data: {nutrients: getNutrientTotals()},
+                                dataType: 'json'
+                            });
+                        });
+
+                        let prev_weight_timespan = 'week';
+                        $("div[id='weights_options'] > input[name='weight_timespan']")
+                            .on('change', function(evt){
+                                let timespan_val = $(this).val();
+                                let today = new Date();
+
+                                switch(timespan_val){
+                                    case "week":
+                                        //Eight days rather than seven because otherwise entries exactly one week ago are removed
+                                        let last_week = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8);
+                                        trim_weights_list(last_week);
+                                        break;
+                                    case "month":
+                                        //TODO Breaks in Jan?
+                                        let last_month = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate() - 1);
+                                        if(prev_weight_timespan == 'year'){
+                                            //Remove an extra day because otherwise entries exactly one month ago are removed
+                                            trim_weights_list(last_month);
+                                            break;
+                                        }
+                                        get_weights_for_timespan(last_month);
+                                        break;
+                                    case "year":
+                                        let last_year = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate() - 1);
+                                        get_weights_for_timespan(last_year);
+                                        break;
+                                }
+                                prev_weight_timespan = timespan_val; 
+                            });
+
+                        function get_weights_for_timespan(timespan_val){
+                            let str_timespan = timespan_val.toJSON().replace("T", " ").replace("Z", "");
+                            $.ajax({
+                                type: 'post',
+                                url: '/get_weights',
+                                data: {timespan: str_timespan},
+                                dataType: 'json'
+                            })
+                            .done(function(weights_list){
+                                let weights_ele_list = $("div[id='weights_list']");
+                                let new_list_html = "<ul>"
+
+                                for(let entry of weights_list){
+                                    new_list_html += `<li><strong>${entry.entry_date}</strong>: ${entry.weight} lb.</li>`
+                                }
+                                new_list_html += "</ul>"
+                                weights_ele_list.html(new_list_html);
+                            });
+                        }
+
+                        function trim_weights_list(date){
+                            //This gets just the date portion
+                            $("div[id='weights_list'] strong")
+                                .each(function(){
+                                    let entry_date = new Date($(this).text());
+                                    if(entry_date < date){
+                                        $(this).parent().remove();
+                                    }
+                                });
+                        }
+                    });
+                </script>
+            </div>
+        </div>
     </body>
 </html>

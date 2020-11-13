@@ -70,13 +70,13 @@ module.exports = {
             callback();
         });
     },
-    getWeights: function (user, callback) {
-        var select_week_of_weights = "SELECT weight, date(entry_datetime) as date " +
+    getWeights: function (user, timespan, callback) {
+        var select_week_of_weights = "SELECT weight, date(entry_datetime) as entry_date " +
             "FROM weights " +
-            "WHERE username=? " +
-            "ORDER BY date(entry_datetime) " +
-            "DESC LIMIT 7";
-        db.all(select_week_of_weights, user, function (err, res) {
+            "WHERE username=? AND entry_date>date(?)" +
+            "ORDER BY entry_date " +
+            "DESC";
+        db.all(select_week_of_weights, [user, timespan], function (err, res) {
             if (err) {
                 return console.log(err.message);
             }
@@ -188,7 +188,7 @@ module.exports = {
         });
     },
     getLastWeekCalEntries: function (username, callback) {
-        let get_cal_entries_query = "SELECT entry_datetime, calories, fat, carb, fiber, protein " +
+        let get_cal_entries_query = "SELECT date(entry_datetime) as dt, time(entry_datetime) as tm, calories, fat, carb, fiber, protein " +
             "FROM cal_entries " +
             "WHERE username=? AND entry_datetime BETWEEN datetime('now', 'localtime', '-6 days') AND datetime('now', 'localtime')";
         db.all(get_cal_entries_query, username, function (err, res) {

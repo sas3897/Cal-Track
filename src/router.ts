@@ -18,10 +18,19 @@ server.set("view engine", "ejs");
 //Home page
 server.get("/", function(req:any, res:any) {
     if(is_logged_in(req)){
-        sqlite.getWeights(req.cookies.username, function(weights_list:any){
-            sqlite.getLastWeekCalEntries(req.cookies.username, function(cal_entries_list:any){
-                res.render("index", {weights:weights_list, cal_entries:cal_entries_list});
-            });
+        let today = new Date();
+        let last_week = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8)
+            .toJSON().replace("T", " ").replace("Z", "");
+
+        sqlite.getWeights(req.cookies.username, last_week, function(weights_list:any){
+          sqlite.getLastWeekCalEntries(req.cookies.username, function(cal_entries_list:any){
+              sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
+                  sqlite.getAllRecipes(function(recipes_list:string[]){
+                      res.render("index", {weights:weights_list, cal_entries:cal_entries_list, 
+                                 ingredients: ingredients_list, recipes: recipes_list});
+                  });
+              });
+           });
         });
     }
     else{
@@ -206,6 +215,20 @@ server.post("/get_recipe_ingredients", function(req:any, res:any){
     });
 });
 
+server.get("/manage_values", function(req:any, res:any){
+    res.render("manage_values");
+});
+
+server.post("/get_weights", function(req:any, res:any){
+    if(is_logged_in(req)){
+        sqlite.getWeights(req.cookies.username, req.body.timespan, function(weights_list:string[]){
+            res.send(weights_list);
+        });
+    }
+    else{
+        res.redirect("/login");
+    }
+});
 
 
 function is_logged_in(req:any){

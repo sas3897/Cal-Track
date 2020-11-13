@@ -15,9 +15,17 @@ server.set("view engine", "ejs");
 //Home page
 server.get("/", function (req, res) {
     if (is_logged_in(req)) {
-        sqlite.getWeights(req.cookies.username, function (weights_list) {
+        let today = new Date();
+        let last_week = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8)
+            .toJSON().replace("T", " ").replace("Z", "");
+        sqlite.getWeights(req.cookies.username, last_week, function (weights_list) {
             sqlite.getLastWeekCalEntries(req.cookies.username, function (cal_entries_list) {
-                res.render("index", { weights: weights_list, cal_entries: cal_entries_list });
+                sqlite.getAllIngredientNames(function (ingredients_list) {
+                    sqlite.getAllRecipes(function (recipes_list) {
+                        res.render("index", { weights: weights_list, cal_entries: cal_entries_list,
+                            ingredients: ingredients_list, recipes: recipes_list });
+                    });
+                });
             });
         });
     }
@@ -165,6 +173,19 @@ server.post("/get_recipe_ingredients", function (req, res) {
     sqlite.getRecipeIngredients(req.body.recipe_name, function (recipe_ing_list) {
         res.send(recipe_ing_list);
     });
+});
+server.get("/manage_values", function (req, res) {
+    res.render("manage_values");
+});
+server.post("/get_weights", function (req, res) {
+    if (is_logged_in(req)) {
+        sqlite.getWeights(req.cookies.username, req.body.timespan, function (weights_list) {
+            res.send(weights_list);
+        });
+    }
+    else {
+        res.redirect("/login");
+    }
 });
 function is_logged_in(req) {
     //Is there a username, or no?
