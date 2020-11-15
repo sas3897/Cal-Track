@@ -22,16 +22,14 @@ server.get("/", function(req:any, res:any) {
         let last_week = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8)
             .toJSON().replace("T", " ").replace("Z", "");
 
-        sqlite.getWeights(req.cookies.username, last_week, function(weights_list:any){
-          sqlite.getLastWeekCalEntries(req.cookies.username, function(cal_entries_list:any){
+//          sqlite.getLastWeekCalEntries(req.cookies.username, function(cal_entries_list:any){
               sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
                   sqlite.getAllRecipes(function(recipes_list:string[]){
-                      res.render("index", {weights:weights_list, cal_entries:cal_entries_list, 
+                      res.render("index", { 
                                  ingredients: ingredients_list, recipes: recipes_list});
                   });
               });
-           });
-        });
+//           });
     }
     else{
         res.redirect("/login");
@@ -223,6 +221,17 @@ server.post("/get_weights", function(req:any, res:any){
     if(is_logged_in(req)){
         sqlite.getWeights(req.cookies.username, req.body.timespan, function(weights_list:string[]){
             res.send(weights_list);
+        });
+    }
+    else{
+        res.redirect("/login");
+    }
+});
+
+server.post("/get_calorie_entries", function(req:any, res:any){
+    if(is_logged_in(req)){
+        sqlite.getCalEntries(req.cookies.username, req.body.timespan, function(calories_list:string[]){
+            res.send(calories_list);
         });
     }
     else{
