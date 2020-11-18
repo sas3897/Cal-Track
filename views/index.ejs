@@ -43,28 +43,26 @@
 
         <div id="left_container" style="width: 50%; float:left;">
             <div id="weights_container" style="height: 40%; margin-left: 16px; margin-top: 16px; ">
-                <div id="weights_options" style="margin-bottom:8px">
-                    <label class="option_label" for="weight_weekly">
-                        <input class="option_input" type="radio" id="weight_weekly" name="weight_timespan" value="week"></input>
+                <div id="timespan_options" style="margin-bottom:8px">
+                    <label class="option_label" for="weekly">
+                        <input class="option_input" type="radio" id="weekly" name="timespan" value="week"></input>
                         Past Week
                     </label>
-                    <label class="option_label" for="weight_monthly">
-                        <input class="option_input" type="radio" id="weight_monthly" name="weight_timespan" value="month"></input>
+                    <label class="option_label" for="monthly">
+                        <input class="option_input" type="radio" id="monthly" name="timespan" value="month"></input>
                         Past Month
                     </label>
-                    <label class="option_label" for="weight_yearly">
-                        <input class="option_input" type="radio" id="weight_yearly" name="weight_timespan" value="year"></input>
+                    <label class="option_label" for="yearly">
+                        <input class="option_input" type="radio" id="yearly" name="timespan" value="year"></input>
                         Past Year
                     </label>
                 </div>
                 <div id="weights_form">
-                    <form action="/" method="post">
-                        <label>Enter today's weight:</label>
-                        <div>
-                            <input id="weight_input" name="weight">
-                            <input type="submit" name="action" value="Enter weight">
-                        </div>
-                    </form>
+                    <label for="weight_input">Enter today's weight:</label>
+                    <div>
+                        <input id="weight_input">
+                        <input id="weight_submit_btn" type="submit" name="action" value="Enter weight">
+                    </div>
                 </div>
                 <div id="weights_list" style="overflow: auto; height: 73%;">
                     <ul>
@@ -124,7 +122,7 @@
                     <tfoot id="totals_container"></tfoot>
                 </table>
             </div>
-            <div id="submit_container">
+            <div>
                 <div style="width:100%">Any ingredients with amount 0 will not be included.</div>
                 <input id="meal_name_input"></input>
                 <input type="number" id="meal_weight_input"></input>
@@ -148,6 +146,9 @@
                                 '<div class="cal_cell_head">Protein</div>' +
                             '</div>' +
                         '</div>';
+                    let timespan_options = $("div[id='timespan_options'] input[name='timespan']");
+                    let prev_timespan = '';
+                    let starting_option = $("div[id='timespan_options'] input[value='week']");
 
 
                     //Add the ingredient to the list
@@ -233,47 +234,63 @@
                             url: '/enter_cal_entry',
                             data: {nutrients: getNutrientTotals()},
                             dataType: 'json'
+                        })
+                        .done(function(statusMsg){
+                            if(statusMsg.status != "error"){
+                                prev_timespan = '';
+                                $("input[name='timespan']:checked").trigger('change');
+                            }
                         });
                     });
 
-                    $("div[id='weights_options'] input[name='weight_timespan']")
-                        .on('change', function(evt){
-                            let timespan_val = $(this).val();
-                            let today = new Date();
-
-                            switch(timespan_val){
-                                case "week":
-                                    //Eight days rather than seven because otherwise entries exactly one week ago are removed
-                                    let last_week = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8);
-
-                                    if(prev_weight_timespan == ''){
-                                        get_cal_entries_for_timespan(last_week);
-                                        get_weights_for_timespan(last_week);
-                                        break;
-                                    }
-                                    trim_cal_entries_list(last_week);
-                                    trim_weights_list(last_week);
-                                    break;
-                                case "month":
-                                    //TODO Breaks in Jan?
-                                    let last_month = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate() - 1);
-                                    if(prev_weight_timespan == 'year'){
-                                        //Remove an extra day because otherwise entries exactly one month ago are removed
-                                        trim_weights_list(last_month);
-                                        trim_cal_entries_list(last_month);
-                                        break;
-                                    }
-                                    get_cal_entries_for_timespan(last_month);
-                                    get_weights_for_timespan(last_month);
-                                    break;
-                                case "year":
-                                    let last_year = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate() - 1);
-                                    get_cal_entries_for_timespan(last_year);
-                                    get_weights_for_timespan(last_year);
-                                    break;
+                    $("#weight_submit_btn").on('click', function(e){
+                        console.log('derp');
+                        $.ajax({
+                            type: 'post',
+                            url: '/enter_weight',
+                            data: {weight: $('#weight_input').val()},
+                            dataType: 'json'
+                        })
+                        .done(function(statusMsg){
+                            if(statusMsg.status != "error"){
+                                prev_timespan = '';
+                                $("input[name='timespan']:checked").trigger('change');
                             }
-                            prev_weight_timespan = timespan_val; 
                         });
+                    });
+
+                    
+                    timespan_options.on('change', function(evt){
+                        let timespan_val = $(this).val();
+                        let today = new Date();
+                        let timespan_list = ["week", "month", "year"];
+                        let timespan_date;
+
+                        switch(timespan_val){
+                            case "week":
+                                //Eight days rather than seven because otherwise entries exactly one week ago are removed
+                                timespan_date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8);
+                                break;
+                            case "month":
+                                //TODO Breaks in Jan?
+                                timespan_date = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate() - 1);
+                                break;
+                            case "year":
+                                timespan_date = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate() - 1);
+                                break;
+                        }
+
+                        //Cal-entries and weights
+                        if(timespan_list.indexOf(timespan_val) < timespan_list.indexOf(prev_timespan)){
+                            trim_list(timespan_date, "div[class='cal_body'] div[class*='cal_date_head']", "div[class='cal_body']");
+                            trim_list(timespan_date, "div[id='weights_list'] strong", "li");
+                        }
+                        else{
+                            get_cal_entries_for_timespan(timespan_date);
+                            get_weights_for_timespan(timespan_date);
+                        }
+                        prev_timespan = timespan_val; 
+                    });
 
                     function get_cal_entries_for_timespan(timespan_val){
                         let str_timespan = timespan_val.toJSON().replace("T", " ").replace("Z", "");
@@ -354,33 +371,17 @@
                         });
                     }
 
-                    function trim_cal_entries_list(date){
+                    function trim_list(date, ele_loc, parent_loc){
                         //This gets just the date portion
-                        $("div[class='cal_body'] div[class*='cal_date_head']")
-                            .each(function(){
-                                console.log($(this).text());
+                        $(ele_loc).each(function(){
                                 let entry_date = new Date($(this).text());
                                 if(entry_date < date){
                                     //The cal-body div
-                                    console.log($(this));
-                                    $(this).parent().parent().remove();
+                                    $(this).closest(parent_loc).remove();
                                 }
                             });
                     }
 
-                    function trim_weights_list(date){
-                        //This gets just the date portion
-                        $("div[id='weights_list'] strong")
-                            .each(function(){
-                                let entry_date = new Date($(this).text());
-                                if(entry_date < date){
-                                    $(this).parent().remove();
-                                }
-                            });
-                    }
-
-                    let prev_weight_timespan = '';
-                    let starting_option = $("div[id='weights_options'] input[value='week']");
                     starting_option.prop("checked", true);
                     starting_option.trigger('change');
                 });

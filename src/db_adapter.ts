@@ -103,7 +103,7 @@ module.exports = {
                 return console.log(err.message);
             }
 
-            callback();
+            callback(err);
         });
     },
     //Note, "meals" means "complete food product", not "thing I ate", which it does on the frontend
@@ -197,7 +197,7 @@ module.exports = {
             callback(row);
         });
     },
-    enterCalEntry: function(username:string, nutrients:string[]){
+    enterCalEntry: function(username:string, nutrients:string[], callback:any){
         let enter_cal_entry_query = 
                 "INSERT INTO cal_entries (username, entry_datetime, calories, fat, carb, fiber, protein) VALUES (?,datetime('now', 'localtime'),?,?,?,?,?)";
         let values:string[] = [username];
@@ -206,6 +206,7 @@ module.exports = {
             if(err){
                 return console.log(err.message);
             }
+            callback(err);
         });
     },
     getCalEntries: function(username:string, timespan:string, callback:any){

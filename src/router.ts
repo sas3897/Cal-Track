@@ -22,28 +22,31 @@ server.get("/", function(req:any, res:any) {
         let last_week = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8)
             .toJSON().replace("T", " ").replace("Z", "");
 
-//          sqlite.getLastWeekCalEntries(req.cookies.username, function(cal_entries_list:any){
-              sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
-                  sqlite.getAllRecipes(function(recipes_list:string[]){
-                      res.render("index", { 
-                                 ingredients: ingredients_list, recipes: recipes_list});
-                  });
-              });
-//           });
+      sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
+          sqlite.getAllRecipes(function(recipes_list:string[]){
+              res.render("index", { 
+                         ingredients: ingredients_list, recipes: recipes_list});
+          });
+      });
     }
     else{
         res.redirect("/login");
     }
 });
 
-server.post("/", function(req:any, res:any){
+server.post("/enter_weight", function(req:any, res:any){
    if(is_logged_in(req)){
-       sqlite.enterWeight(req.cookies.username, req.body.weight, function(){
-           res.redirect("/");
+       sqlite.enterWeight(req.cookies.username, req.body.weight, function(err:any){
+           if(err){
+               res.send({status:"error"});
+           } 
+           else{
+               res.send({status:"success"});
+           }
        });
    }
    else{
-       res.redirect("/login");
+       res.send({status:"error"});
    } 
 });
 
@@ -189,7 +192,14 @@ server.post("/get_meal", function(req:any, res:any){
 });
 
 server.post("/enter_cal_entry", function(req:any, res:any){
-    sqlite.enterCalEntry(req.cookies.username, req.body.nutrients);
+    sqlite.enterCalEntry(req.cookies.username, req.body.nutrients, function(err:any){
+       if(err){
+           res.send({status:"error"});
+       } 
+       else{
+           res.send({status:"success"});
+       }
+    });
 });
 
 server.post("/enter_meal_cal_entry", function(req:any, res:any){
@@ -238,7 +248,6 @@ server.post("/get_calorie_entries", function(req:any, res:any){
         res.redirect("/login");
     }
 });
-
 
 function is_logged_in(req:any){
     //Is there a username, or no?

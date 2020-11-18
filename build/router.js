@@ -18,7 +18,6 @@ server.get("/", function (req, res) {
         let today = new Date();
         let last_week = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8)
             .toJSON().replace("T", " ").replace("Z", "");
-        //          sqlite.getLastWeekCalEntries(req.cookies.username, function(cal_entries_list:any){
         sqlite.getAllIngredientNames(function (ingredients_list) {
             sqlite.getAllRecipes(function (recipes_list) {
                 res.render("index", {
@@ -26,20 +25,24 @@ server.get("/", function (req, res) {
                 });
             });
         });
-        //           });
     }
     else {
         res.redirect("/login");
     }
 });
-server.post("/", function (req, res) {
+server.post("/enter_weight", function (req, res) {
     if (is_logged_in(req)) {
-        sqlite.enterWeight(req.cookies.username, req.body.weight, function () {
-            res.redirect("/");
+        sqlite.enterWeight(req.cookies.username, req.body.weight, function (err) {
+            if (err) {
+                res.send({ status: "error" });
+            }
+            else {
+                res.send({ status: "success" });
+            }
         });
     }
     else {
-        res.redirect("/login");
+        res.send({ status: "error" });
     }
 });
 server.all("/logout", function (req, res) {
@@ -158,7 +161,14 @@ server.post("/get_meal", function (req, res) {
     });
 });
 server.post("/enter_cal_entry", function (req, res) {
-    sqlite.enterCalEntry(req.cookies.username, req.body.nutrients);
+    sqlite.enterCalEntry(req.cookies.username, req.body.nutrients, function (err) {
+        if (err) {
+            res.send({ status: "error" });
+        }
+        else {
+            res.send({ status: "success" });
+        }
+    });
 });
 server.post("/enter_meal_cal_entry", function (req, res) {
     sqlite.enterMealCalEntry(req.cookies.username, parseInt(req.body.meal_id), parseFloat(req.body.amnt_left), req.body.cal_vals, req.body.meal_vals);
