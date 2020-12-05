@@ -11,29 +11,61 @@ module.exports = {
             callback(res);
         });
     },
-    enterIngredient: function(ing_name:string, nutrients:string[], units:string[], amounts:number[], callback:any){
-        let enter_ingredient_query = 
-            "INSERT INTO ingredient_servings(ingredient_name, calories, fat, carb, fiber, protein) VALUES (?,?,?,?,?,?)";
-        db.run(enter_ingredient_query, [ing_name].concat(nutrients), function(err:any){
+    createOrUpdateIngredient: function(ing_name:string, nutrients:string[], units:string[], amounts:number[], callback:any){
+        let check_query = "SELECT ingredient_name FROM ingredient_servings WHERE ingredient_name=?";
+        db.get(check_query, ing_name, (err:any, row:any) => {
             if(err){
                 return console.log(err.message);
-            } 
-            enter_ingredient_query = "INSERT INTO ingredient_serving_units(ingredient_name, unit, amount) VALUES ";
-            enter_ingredient_query += units.map(() => "(?, ?, ?)").join(', '); 
+            }   
+            let enter_units_query = "INSERT INTO ingredient_serving_units(ingredient_name, unit, amount) VALUES ";
+            enter_units_query += units.map(() => "(?, ?, ?)").join(', '); 
 
-
-            let values:string[] = [];
+            let unit_values:string[] = [];
             for(let idx = 0;idx < units.length; idx++){
-                values = values.concat([ing_name, units[idx], String(amounts[idx])]);
+                unit_values = unit_values.concat([ing_name, units[idx], String(amounts[idx])]);
             }
 
-            db.run(enter_ingredient_query, values, function(err:any){
-                if(err){
-                    callback(err.message);
-                    return console.log(err.message);
-                }   
-                callback("");
-            });
+            if(row === undefined){
+                let enter_ingredient_query = 
+                    "INSERT INTO ingredient_servings(ingredient_name, calories, fat, carb, fiber, protein) VALUES (?,?,?,?,?,?)";
+                db.serialize(() => {
+                    db.run(enter_ingredient_query, [ing_name].concat(nutrients), function(err:any){
+                        if(err){
+                            return console.log(err.message);
+                        } 
+                    })
+                    .run(enter_units_query, unit_values, function(err:any){
+                        if(err){
+                            callback(err.message);
+                            return console.log(err.message);
+                        }   
+                        callback("");
+                    });
+                });
+            }
+            else{
+                let update_query = "UPDATE ingredient_servings " + 
+                    "SET calories=?, fat=?, carb=?, fiber=?, protein=? " + 
+                    "WHERE ingredient_name=?;"
+                let delete_query = "DELETE FROM ingredient_serving_units WHERE ingredient_name=?;";
+
+                db.serialize(() => {
+                    db.run(update_query, nutrients.concat([ing_name]), function(err:any){
+                        if(err){
+                            callback(err.message);
+                            return console.log(err.message);
+                        }   
+                    })
+                    .run(delete_query, [ing_name])
+                    .run(enter_units_query, unit_values, function(err:any){
+                        if(err){
+                            callback(err.message);
+                            return console.log(err.message);
+                        }   
+                        callback("");
+                    });
+                });
+            }
         });
     },
     getIngredient: function(name:string, callback:any){

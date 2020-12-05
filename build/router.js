@@ -126,11 +126,8 @@ server.get("/existing", function (req, res) {
         res.redirect("/login");
     }
 });
-server.get("/add_ingredient", function (req, res) {
-    res.render("add_ingredient");
-});
 server.post("/add_ingredient", function (req, res) {
-    sqlite.enterIngredient(req.body.ingredient_name, req.body.nutrients, req.body.units, req.body.amounts, function (err_msg) {
+    sqlite.createOrUpdateIngredient(req.body.ingredient_name, req.body.nutrients, req.body.units, req.body.amounts, function (err_msg) {
         res.json({ err: err_msg });
     });
 });
@@ -176,6 +173,11 @@ server.post("/enter_meal_cal_entry", function (req, res) {
 server.post("/get_ingredient", function (req, res) {
     sqlite.getIngredient(req.body.ingredient_name, function (ingredient_info) {
         res.send(ingredient_info);
+    });
+});
+server.get("/get_ingredient_list", function (req, res) {
+    sqlite.getAllIngredientNames(function (ingredients_list) {
+        res.send(ingredients_list);
     });
 });
 server.post("/get_recipe_ingredients", function (req, res) {
