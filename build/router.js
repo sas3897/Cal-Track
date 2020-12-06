@@ -103,19 +103,6 @@ server.post("/login/create_account", function (req, res) {
         });
     }
 });
-//Display the ad-hoc meal page
-server.get("/adhoc", function (req, res) {
-    if (is_logged_in(req)) {
-        sqlite.getAllIngredientNames(function (ingredients_list) {
-            sqlite.getAllRecipes(function (recipes_list) {
-                res.render("add_meal_adhoc", { ingredients: ingredients_list, recipes: recipes_list });
-            });
-        });
-    }
-    else {
-        res.redirect("/login");
-    }
-});
 server.get("/existing", function (req, res) {
     if (is_logged_in(req)) {
         sqlite.getAllMeals(function (meals_list) {
@@ -131,17 +118,10 @@ server.post("/add_ingredient", function (req, res) {
         res.json({ err: err_msg });
     });
 });
-server.get("/add_recipe", function (req, res) {
-    sqlite.getAllIngredientNames(function (ingredients_list) {
-        res.render("add_recipe", { ingredients: ingredients_list });
-    });
-});
 server.post("/add_recipe", function (req, res) {
-    sqlite.enterRecipe(req.body.recipe_name, req.body.ingredients, function () {
+    sqlite.createOrUpdateRecipe(req.body.recipe_name, req.body.ingredients, function (potentialErr) {
         //Success message
-        res.json({ err: "" });
-    }, function () {
-        res.json({ err: "A recipe with that name already exists." });
+        res.json({ err: potentialErr });
     });
 });
 server.post("/add_meal", function (req, res) {
@@ -149,7 +129,7 @@ server.post("/add_meal", function (req, res) {
         //Success message
         res.json({ err: "" });
     }, function () {
-        res.json({ err: "A recipe with that name already exists." });
+        res.json({ err: "A meal with that name already exists." });
     });
 });
 server.post("/get_meal", function (req, res) {
@@ -178,6 +158,11 @@ server.post("/get_ingredient", function (req, res) {
 server.get("/get_ingredient_list", function (req, res) {
     sqlite.getAllIngredientNames(function (ingredients_list) {
         res.send(ingredients_list);
+    });
+});
+server.get("/get_recipe_list", function (req, res) {
+    sqlite.getAllRecipes(function (recipes_list) {
+        res.send(recipes_list);
     });
 });
 server.post("/get_recipe_ingredients", function (req, res) {

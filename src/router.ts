@@ -14,7 +14,6 @@ server.set("view engine", "ejs");
 
 //TODO it'd be better to make every url first check for the login and do that redirect, and if they're logged in take them to the page they wanted to go normally? (though doesn't this never resolve?)
 
-
 //Home page
 server.get("/", function(req:any, res:any) {
     if(is_logged_in(req)){
@@ -117,21 +116,6 @@ server.post("/login/create_account", function(req:any, res:any){
     }
 });
 
-//Display the ad-hoc meal page
-server.get("/adhoc", function(req:any, res:any){
-    if(is_logged_in(req)){
-        sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
-            sqlite.getAllRecipes(function(recipes_list:string[]){
-                res.render("add_meal_adhoc", {ingredients: ingredients_list, recipes: recipes_list});
-            });
-        });
-    }
-    else{
-        res.redirect("/login");
-    }
-});
-
-
 server.get("/existing", function(req:any, res:any){
     if(is_logged_in(req)){
         sqlite.getAllMeals(function(meals_list:any){
@@ -150,21 +134,13 @@ server.post("/add_ingredient", function(req:any, res:any){
     });   
 });
 
-server.get("/add_recipe", function(req:any, res:any){
-    sqlite.getAllIngredientNames(function (ingredients_list:string[]){   
-        res.render("add_recipe", {ingredients: ingredients_list});
-    });
-});
-
 server.post("/add_recipe", function(req:any, res:any){
-    sqlite.enterRecipe(req.body.recipe_name, req.body.ingredients, 
-    function(){
-        //Success message
-        res.json({err:""});
-    }, 
-    function(){ 
-        res.json({err:"A recipe with that name already exists."});
-    });
+    sqlite.createOrUpdateRecipe(req.body.recipe_name, req.body.ingredients, 
+        function(potentialErr:string){
+            //Success message
+            res.json({err:potentialErr});
+        }
+    );
 });
 
 server.post("/add_meal", function(req:any, res:any){
@@ -174,7 +150,7 @@ server.post("/add_meal", function(req:any, res:any){
             res.json({err:""});
         }, 
         function(){ 
-            res.json({err:"A recipe with that name already exists."});
+            res.json({err:"A meal with that name already exists."});
         }
     );
 });
@@ -216,6 +192,12 @@ server.post("/get_ingredient", function(req:any, res:any){
 server.get("/get_ingredient_list", function(req:any, res:any){
     sqlite.getAllIngredientNames(function (ingredients_list:string[]){
         res.send(ingredients_list);
+    });
+});
+
+server.get("/get_recipe_list", function(req:any, res:any){
+    sqlite.getAllRecipes(function(recipes_list:string[]){
+        res.send(recipes_list);
     });
 });
 

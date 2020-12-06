@@ -35,9 +35,34 @@ $(document).ready(function(){
             data: {recipe_name: recipe_name},
             dataType: 'json'
         })
-        .done(function(ingredients_info){
-            //TODO load the recipe ingredients onto the page
-            console.log(ingredients_info);
+        .done(function(recipe_info){
+            let ing_ratio_map = {};
+            let ing_nutr_map = {};
+            let ing_unit_map = {};
+            for(let info_obj of recipe_info){
+                let ing_name = info_obj.ingredient_name;
+                //If it's the first time we've encountered this ingredient
+                if(!(ing_name in ing_ratio_map)){
+                    ing_ratio_map[ing_name] = info_obj.ingredient_ratio;
+                    ing_nutr_map[ing_name] = {
+                        'calories': info_obj.calories,
+                        'fat': info_obj.fat,
+                        'carb': info_obj.carb,
+                        'fiber': info_obj.fiber,
+                        'protein': info_obj.protein
+                    }
+                    ing_unit_map[ing_name] = {[info_obj.unit]: (info_obj.amount)};
+                }
+                else{
+                    ing_unit_map[ing_name][info_obj.unit] = info_obj.amount;
+                }
+            }
+
+            for(let ing_name of Object.keys(ing_ratio_map)){
+                generate_ingredient(nutrient_ids, ing_name, 
+                    ing_nutr_map[ing_name], ing_unit_map[ing_name], 
+                    ing_ratio_map[ing_name]); 
+            }
         });
     });
 

@@ -123,15 +123,6 @@ module.exports = {
             callback(err);
         });
     },
-    //Note, "meals" means "complete food product", not "thing I ate", which it does on the frontend
-    getAllMeals: function (callback) {
-        db.all("SELECT meal_id, meal_name, total_weight FROM meals ", function (err, res) {
-            if (err) {
-                return console.log(err.message);
-            }
-            callback(res);
-        });
-    },
     getAllRecipes: function (callback) {
         db.all("SELECT DISTINCT recipe_name FROM recipes ", function (err, res) {
             if (err) {
@@ -140,35 +131,45 @@ module.exports = {
             callback(res);
         });
     },
-    enterRecipe: function (recipe_name, ingredients, succ_callback, dup_callback) {
+    createOrUpdateRecipe: function (recipe_name, ingredients, callback) {
         let check_name_query = 'SELECT recipe_name FROM recipes where recipe_name=?';
         db.get(check_name_query, recipe_name, (err, row) => {
             if (err) {
                 return console.log(err.message);
             }
-            if (row === undefined) {
-                let enter_recipe_query = "INSERT INTO recipes (recipe_name, ingredient_name, ingredient_ratio) VALUES ";
-                enter_recipe_query += ingredients.map(() => "(?, ?, ?)").join(', ');
-                let values = [];
-                ingredients.forEach((entry) => {
-                    values.push(recipe_name);
-                    values = values.concat(Object.values(entry));
-                });
+            let enter_recipe_query = "INSERT INTO recipes (recipe_name, ingredient_name, ingredient_ratio) VALUES ";
+            enter_recipe_query += ingredients.map(() => "(?, ?, ?)").join(', ');
+            let values = [];
+            ingredients.forEach((entry) => {
+                values.push(recipe_name);
+                values = values.concat(Object.values(entry));
+            });
+            db.serialize(() => {
+                if (row !== undefined) {
+                    let delete_recipe_query = "DELETE FROM recipes WHERE recipe_name=?";
+                    db.run(delete_recipe_query, [recipe_name]);
+                }
                 db.run(enter_recipe_query, values, function (err) {
                     if (err) {
                         return console.log(err.message);
                     }
-                    succ_callback();
+                    callback(err);
                 });
-            }
-            else {
-                dup_callback();
-            }
+            });
         });
     },
     getRecipeIngredients: function (recipe_name, callback) {
         let get_ingredients_query = "SELECT serv.*, units.amount, units.unit, recp.ingredient_ratio FROM ingredient_servings AS serv INNER JOIN (SELECT ingredient_name, ingredient_ratio FROM recipes WHERE recipe_name = ?) recp ON recp.ingredient_name=serv.ingredient_name INNER JOIN ingredient_serving_units AS units ON units.ingredient_name=serv.ingredient_name";
         db.all(get_ingredients_query, recipe_name, (err, res) => {
+            if (err) {
+                return console.log(err.message);
+            }
+            callback(res);
+        });
+    },
+    //Note, "meals" means "complete food product", not "thing I ate", which it does on the frontend
+    getAllMeals: function (callback) {
+        db.all("SELECT meal_id, meal_name, total_weight FROM meals ", function (err, res) {
             if (err) {
                 return console.log(err.message);
             }

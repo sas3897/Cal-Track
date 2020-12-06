@@ -14,16 +14,18 @@ $(document).ready(function(){
                 break;
             case "Recipe":
                 template_container.html(load_recipe_template());
+                load_recipe_scripts();
                 break;
             default:
                 console.error("Option chosen does not have an associated template!");
         }
     });
 
+    //Ingredients sections
     function load_ing_template(){
         return '<div class="ing_form" id="ing_form">' +
             '<div class="lone-input" id="existing_container">' +
-                '<span style="margin-right:16px;" >Ingredient</span>' +
+                '<span style="margin-right:16px;" >Ingredients</span>' +
             '</div>' + 
 
             '<div id="name_container">' +
@@ -233,12 +235,226 @@ $(document).ready(function(){
         });
     }
 
+    //Meal section
     function load_meal_template(){
         return "";
     }
 
+    function load_meal_scripts(){
+
+    }
+
+    //Recipe section
     function load_recipe_template(){
-        return "";
+        return '<div>' + 
+            '<div style="float: left; display: none;" class="alert alert-danger" id="warning_container"></div>' +
+
+            '<div class="lone-input" style="margin-bottom:16px" id="existing_container">' +
+                '<span style="margin-right:16px;">Recipes</span>' +
+            '</div>' + 
+
+            '<div id="ingredients_options_container">' +
+                '<div style="width=100%">If the ingredient has already been added, its amount will increase by one serving size.</div>' +
+                '<select id="ingredients_list">' +
+                '</select>' +
+                '<input id="add_ingredient_btn" type="button" value="Add Ingredient">' +
+            '</div>' +
+            '<div>' +
+                '<table>' +
+                    '<tbody id="ingredients_container">' +
+                        '<tr>' +
+                            '<th>Name</th>' +
+                            '<th>Unit</th>' + 
+                            '<th>Amount</th>' + 
+                            '<th>Calories</th>' +
+                            '<th>Fat</th>' +
+                            '<th>Carbs</th>' +
+                            '<th>Fiber</th>' +
+                            '<th>Protein</th>' +
+                        '</tr>' +
+                    '</tbody>' + 
+                    '<tfoot id="totals_container"></tfoot>' +
+                '</table>' +
+            '</div>' +
+
+            '<div id="submit_container>' + 
+                '<div style="width:100%">Any ingredients with amount 0 will not be included.</div>' +
+                '<div id="name_container">' + 
+                    '<label class="lone-input" for="recipe_name_input">Name:</label>' +
+                    '<input class="lone-input" id="recipe_name_input"></input>' +
+                '</div>' + 
+                '<input type="button" id="submit_btn" value="Add Recipe"></input>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function load_recipe_scripts(){
+        $.ajax({
+            type: 'get',
+            url: "get_ingredient_list",
+            dataType: 'json'
+        })
+        .done(function(ing_list){
+            let ing_options = "";
+            for(let ing_obj of ing_list){
+                let ing_name = ing_obj.ingredient_name;
+                ing_options += `<option value='${ing_name}'>${ing_name}</option>`;
+            }
+            $("select[id='ingredients_list']").html(ing_options);
+        });
+        
+        let existing_container = $("div[id='existing_container']");
+        let ingredients_container = $("tbody[id='ingredients_container']"); 
+        let nutrient_ids = ["calories", "fat", "carb", "fiber", "protein"];
+        let recipe_name_input = $("#recipe_name_input");
+
+        $.ajax({
+            type: 'get',
+            url: "get_recipe_list",
+            dataType: 'json'
+        })
+        .done(function(recipe_list){
+            let select_id = "existing_select"
+            let recipe_select = `<select id='${select_id}'><option value='none'>[New Recipe]</option>`;
+            for(let recipe_obj of recipe_list){
+                let recipe_name = recipe_obj.recipe_name;
+                recipe_select += `<option value='${recipe_name}'>${recipe_name}</option>`;
+            }
+            recipe_select += "</select>";
+
+            existing_container.append(recipe_select);
+
+            $(`select[id='${select_id}']`).on("change", function(){
+                let name_container = $("div[id='name_container']");
+                let recipe = $(this).val();
+                let submit_btn = $("#submit_btn");
+
+                //TODO replace with a better div-based solution
+                //Clear out the container in anticipation of the new inputs
+                ingredients_container.html(
+                    '<tr>' +
+                        '<th>Name</th>' +
+                        '<th>Unit</th>' + 
+                        '<th>Amount</th>' + 
+                        '<th>Calories</th>' +
+                        '<th>Fat</th>' +
+                        '<th>Carbs</th>' +
+                        '<th>Fiber</th>' +
+                        '<th>Protein</th>' +
+                    '</tr>' 
+                )
+                if(recipe == "none"){
+                    recipe_name_input.val("");
+                    name_container.show();
+
+                    update_totals();
+                    
+                    submit_btn.val("Add Recipe");
+                }
+                else{
+                    recipe_name_input.val(recipe);
+                    name_container.hide();
+                    $.ajax({
+                        type: 'post',
+                        url: '/get_recipe_ingredients',
+                        data: {recipe_name: recipe},
+                        dataType: 'json',
+
+                    })
+                    .done(function(recipe_info){
+                        let ing_ratio_map = {};
+                        let ing_nutr_map = {};
+                        let ing_unit_map = {};
+                        for(let info_obj of recipe_info){
+                            let ing_name = info_obj.ingredient_name;
+                            //If it's the first time we've encountered this ingredient
+                            if(!(ing_name in ing_ratio_map)){
+                                ing_ratio_map[ing_name] = info_obj.ingredient_ratio;
+                                ing_nutr_map[ing_name] = {
+                                    'calories': info_obj.calories,
+                                    'fat': info_obj.fat,
+                                    'carb': info_obj.carb,
+                                    'fiber': info_obj.fiber,
+                                    'protein': info_obj.protein
+                                }
+                                ing_unit_map[ing_name] = {[info_obj.unit]: (info_obj.amount)};
+                            }
+                            else{
+                                ing_unit_map[ing_name][info_obj.unit] = info_obj.amount;
+                            }
+                        }
+
+                        for(let ing_name of Object.keys(ing_ratio_map)){
+                            generate_ingredient(nutrient_ids, ing_name, 
+                                ing_nutr_map[ing_name], ing_unit_map[ing_name], 
+                                ing_ratio_map[ing_name]); 
+                        }
+
+                        submit_btn.val("Update Recipe");
+                    });
+                }
+            });
+        });
+
+        //Add the ingredient to the list
+        $("#add_ingredient_btn").on('click', function(e){
+            add_ingredient(nutrient_ids);
+        });
+        
+
+        ingredients_container.on('update', function(){
+            update_totals();
+        });
+
+        $("#submit_btn").on('click', function(e){
+            let recipe_name = recipe_name_input.val(); 
+            //TODO replace this with a more elegant error message box
+            if(recipe_name == ""){
+                alert("You must provide a name!");
+                return;
+            }
+
+            let ingredient_rows = ingredients_container.find("tr");
+            //There's always a header row we have to ignore
+            //TODO replace this with a more elegant error message box
+            if(ingredient_rows.length <= 1){
+                alert("You need to have at least one ingredient!");
+                return;
+            }
+            let ingredients_list = {}
+            for(let idx = 1; idx < ingredient_rows.length; idx++){
+                let ingredient = ingredient_rows.get(idx);
+                let amount = $(ingredient).find("#amount").val();
+                if(parseFloat(amount) > 0){
+                    ingredients_list[idx] = {
+                        "name" : $(ingredient).find("#ing_name").text(),
+                        "ratio" : $(ingredient).find("#hid_ratio").val(),
+                    }
+                }
+            }
+            
+            if(Object.keys(ingredients_list).length > 0){
+                $.ajax({
+                    type: 'post',
+                    url: '/add_recipe',
+                    data: {recipe_name: recipe_name, ingredients: ingredients_list},
+                    dataType: 'json'
+                })
+                .done(function(maybeError){
+                    if(maybeError.err != null){
+                        let warning_container = $("#warning_container");
+                        warning_container.text(maybeError.err);
+                        warning_container.show();
+                    }
+                    else{
+                        $("#warning_container").hide();
+                    }
+                });
+            }
+            else{
+                alert("One non-zero amount of an ingredient is required.");
+            }
+        });
     }
 
     //Initialize the page

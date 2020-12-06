@@ -55,9 +55,72 @@ function update_totals(){
 }
 
 
+function generate_ingredient(nutrient_ids, ing_name, nutr_info, units_map, ratio){
+    //Check if it already was added to the page
+    //TODO add a "remove ingredient" button
+    let maybeEntry = $(`[id='${ing_name}']`);
+    if(maybeEntry.length === 0){
+        $("#ingredients_container").append(
+            `<tr id='${ing_name}'>` +
+                `<td id='ing_name'>${ing_name}</td>` +
+                "<td><select id='unit'></select></td>" +
+                `<td><input id='amount' type='number' step='any'></input></td>` +
+                `<td id='${nutrient_ids[0]}'>${nutr_info.calories}</td>` +
+                `<td id='${nutrient_ids[1]}'>${nutr_info.fat}</td>` +
+                `<td id='${nutrient_ids[2]}'>${nutr_info.carb}</td>` +
+                `<td id='${nutrient_ids[3]}'>${nutr_info.fiber}</td>` +
+                `<td id='${nutrient_ids[4]}'>${nutr_info.protein}</td>` +
+                `<input id='hid_ratio' type='hidden' value=1></input>` + 
+            "</tr>"
+        );
+
+        //No longer a maybe, in this case
+        maybeEntry = $(`[id='${ing_name}']`);
+        let units = maybeEntry.find("#unit");
+        let amount = maybeEntry.find("#amount");
+
+        //The ratio between the current unit's serving size
+        let curr_amount_ratio = ratio;
+        units.on('change', function(){
+            amount.val(units_map[units.val()] * curr_amount_ratio);
+        });
+        amount.on('change', function(){
+            curr_amount_ratio = parseFloat(maybeEntry.find("[id='amount']").val())/units_map[units.val()];
+            maybeEntry.find('#hid_ratio').val(curr_amount_ratio);
+            nutrient_ids.forEach(function(id){
+                let nutrient = maybeEntry.find(`#${id}`);
+                nutrient.text(parseFloat(nutr_info[id]) * curr_amount_ratio);
+            })
+            $("#ingredients_container").trigger('update');
+        });
+
+        let first_unit = true;
+
+        for(let unit of Object.keys(units_map)){
+            if(first_unit){
+                amount.val(units_map[unit] * ratio);
+                first_unit=false;
+            }
+            units.append(`<option>${unit}</option>`);
+        }
+
+        if(ratio != 1){
+            amount.trigger('change');
+        }
+    }
+    else{
+        let curr_amount = maybeEntry.find("#amount");
+        let unit = maybeEntry.find("[id='unit']").val();
+        curr_amount.val(parseFloat(curr_amount.val()) + units_map[unit]);
+        curr_amount.trigger('change');
+    }
+    $("#ingredients_container").trigger('update');
+}
+
+
 function add_ingredient(nutrient_ids){
     //Add the ingredient to the list
-    var ingredient_name = $('select[id=ingredients_list]').val();
+    let ingredient_name = $('select[id=ingredients_list]').val();
 
     $.ajax({
         type: 'post',
@@ -73,59 +136,6 @@ function add_ingredient(nutrient_ids){
             unit_amount_map[entry.unit] = parseFloat(entry.amount);
         }
 
-        //Check if it already was added to the page
-        //TODO add a "remove ingredient" button
-        var maybeEntry = $(`[id='${ingredient_name}']`);
-        if(maybeEntry.length === 0){
-            $("#ingredients_container").append(
-                `<tr id='${ingredient_name}'>` +
-                    `<td id='ing_name'>${ingredient_name}</td>` +
-                    "<td><select id='unit'></select></td>" +
-                    `<td><input id='amount' type='number' step='any'></input></td>` +
-                    `<td id='${nutrient_ids[0]}'>${nutr_info.calories}</td>` +
-                    `<td id='${nutrient_ids[1]}'>${nutr_info.fat}</td>` +
-                    `<td id='${nutrient_ids[2]}'>${nutr_info.carb}</td>` +
-                    `<td id='${nutrient_ids[3]}'>${nutr_info.fiber}</td>` +
-                    `<td id='${nutrient_ids[4]}'>${nutr_info.protein}</td>` +
-                    `<input id='hid_ratio' type='hidden' value=1></input>` + 
-                "</tr>"
-            );
-
-            //No longer a maybe, in this case
-            maybeEntry = $(`[id='${ingredient_name}']`);
-            let units = maybeEntry.find("[id='unit']");
-            let amount = maybeEntry.find("#amount");
-            let first_unit = true;
-
-            for(let unit of Object.keys(unit_amount_map)){
-                if(first_unit){
-                    amount.val(unit_amount_map[unit]);
-                    first_unit=false;
-                }
-                units.append(`<option>${unit}</option>`);
-            }
-
-            //The ratio between the current unit's serving size
-            let curr_amount_ratio = 1;
-            units.on('change', function(){
-                amount.val(unit_amount_map[units.val()] * curr_amount_ratio);
-            });
-            amount.on('change', function(){
-                curr_amount_ratio = parseFloat(maybeEntry.find("[id='amount']").val())/unit_amount_map[units.val()];
-                maybeEntry.find('#hid_ratio').val(curr_amount_ratio);
-                nutrient_ids.forEach(function(id){
-                    let nutrient = maybeEntry.find(`#${id}`);
-                    nutrient.text(parseFloat(nutr_info[id])*curr_amount_ratio);
-                })
-                $("#ingredients_container").trigger('update');
-            });
-        }
-        else{
-            let curr_amount = maybeEntry.find("#amount");
-            let unit = maybeEntry.find("[id='unit']").val();
-            curr_amount.val(parseFloat(curr_amount.val()) + parseFloat(unit_amount_map[unit]));
-            curr_amount.trigger('change');
-        }
-        $("#ingredients_container").trigger('update');
+        generate_ingredient(nutrient_ids, ingredient_name, nutr_info, unit_amount_map, 1); 
     });
 }

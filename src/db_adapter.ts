@@ -138,15 +138,6 @@ module.exports = {
             callback(err);
         });
     },
-    //Note, "meals" means "complete food product", not "thing I ate", which it does on the frontend
-    getAllMeals: function(callback:any){
-        db.all("SELECT meal_id, meal_name, total_weight FROM meals ", function(err:any, res:any){
-            if(err){
-                return console.log(err.message);
-            }
-            callback(res);
-        });
-    },
     getAllRecipes: function(callback:any){
         db.all("SELECT DISTINCT recipe_name FROM recipes ", function(err:any, res:any){
             if(err){
@@ -155,32 +146,34 @@ module.exports = {
             callback(res);
         });
     },
-    enterRecipe: function(recipe_name:string, ingredients:string[], succ_callback:any, dup_callback:any){
+    createOrUpdateRecipe: function(recipe_name:string, ingredients:string[], callback:any){
         let check_name_query = 'SELECT recipe_name FROM recipes where recipe_name=?';
         db.get(check_name_query, recipe_name, (err:any, row:any) => {
             if(err){
                 return console.log(err.message);
             }   
-            if(row === undefined){
-                let enter_recipe_query = 
-                    "INSERT INTO recipes (recipe_name, ingredient_name, ingredient_ratio) VALUES ";
-                enter_recipe_query += ingredients.map(() => "(?, ?, ?)").join(', '); 
-                let values:string[] = [];
-                ingredients.forEach((entry) => {
-                    values.push(recipe_name); 
-                    values = values.concat(Object.values(entry));
-                });
+            let enter_recipe_query = 
+                "INSERT INTO recipes (recipe_name, ingredient_name, ingredient_ratio) VALUES ";
+            enter_recipe_query += ingredients.map(() => "(?, ?, ?)").join(', '); 
+            let values:string[] = [];
+            ingredients.forEach((entry) => {
+                values.push(recipe_name); 
+                values = values.concat(Object.values(entry));
+            });
+
+            db.serialize(() => {
+                if(row !== undefined){
+                    let delete_recipe_query = "DELETE FROM recipes WHERE recipe_name=?";
+                    db.run(delete_recipe_query, [recipe_name]);
+                }
                 db.run(enter_recipe_query, values, function(err:any){
                     if(err){
                         return console.log(err.message);
                     }
 
-                    succ_callback();
+                    callback(err);
                 });
-            }
-            else{
-                dup_callback();
-            }
+            });
         }); 
     },
     getRecipeIngredients: function(recipe_name:string, callback:any){
@@ -190,6 +183,15 @@ module.exports = {
                 return console.log(err.message);
             }
 
+            callback(res);
+        });
+    },
+    //Note, "meals" means "complete food product", not "thing I ate", which it does on the frontend
+    getAllMeals: function(callback:any){
+        db.all("SELECT meal_id, meal_name, total_weight FROM meals ", function(err:any, res:any){
+            if(err){
+                return console.log(err.message);
+            }
             callback(res);
         });
     },
