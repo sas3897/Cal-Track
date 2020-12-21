@@ -89,7 +89,7 @@ function generate_ingredient(nutrient_ids, ing_name, nutr_info, units_map, ratio
             maybeEntry.find('#hid_ratio').val(curr_amount_ratio);
             nutrient_ids.forEach(function(id){
                 let nutrient = maybeEntry.find(`#${id}`);
-                nutrient.text(parseFloat(nutr_info[id]) * curr_amount_ratio);
+                nutrient.text((parseFloat(nutr_info[id]) * curr_amount_ratio).toFixed(2));
             })
             $("#ingredients_container").trigger('update');
         });
@@ -138,4 +138,24 @@ function add_ingredient(nutrient_ids){
 
         generate_ingredient(nutrient_ids, ingredient_name, nutr_info, unit_amount_map, 1); 
     });
+}
+
+function getNutrientTotals(){
+    let ingredient_rows = $("#ingredients_container tr");
+    //There's always a header row we have to ignore
+    //TODO replace this with a more elegant error message box
+    if(ingredient_rows.length <= 1){
+        alert("You need to have at least one ingredient!");
+        return;
+    }
+    
+    let nutrients_list = [
+        $("#calories_total").text(),
+        $("#fat_total").text(),
+        $("#carbs_total").text(),
+        $("#fiber_total").text(),
+        $("#protein_total").text()
+    ]
+
+    return nutrients_list;
 }

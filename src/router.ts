@@ -116,17 +116,6 @@ server.post("/login/create_account", function(req:any, res:any){
     }
 });
 
-server.get("/existing", function(req:any, res:any){
-    if(is_logged_in(req)){
-        sqlite.getAllMeals(function(meals_list:any){
-            res.render("add_meal_existing", {existing: meals_list});
-        });
-    }
-    else{
-        res.redirect("/login");
-    }
-});
-
 server.post("/add_ingredient", function(req:any, res:any){
     sqlite.createOrUpdateIngredient(req.body.ingredient_name, req.body.nutrients, req.body.units, req.body.amounts, 
     function(err_msg:string){
@@ -144,14 +133,11 @@ server.post("/add_recipe", function(req:any, res:any){
 });
 
 server.post("/add_meal", function(req:any, res:any){
-    sqlite.enterMeal(req.body.meal_name, parseFloat(req.body.meal_weight), req.body.nutrients, 
-        function(){
+    sqlite.createOrUpdateMeal(req.body.meal_name, parseFloat(req.body.meal_weight), req.body.nutrients, 
+        function(potentialErr:string){
             //Success message
-            res.json({err:""});
-        }, 
-        function(){ 
-            res.json({err:"A meal with that name already exists."});
-        }
+            res.json({err:potentialErr});
+        } 
     );
 });
 
@@ -204,6 +190,12 @@ server.get("/get_recipe_list", function(req:any, res:any){
 server.post("/get_recipe_ingredients", function(req:any, res:any){
     sqlite.getRecipeIngredients(req.body.recipe_name, function(recipe_ing_list:string[]){
         res.send(recipe_ing_list);
+    });
+});
+
+server.get("/get_meal_list", function(req:any, res:any){
+    sqlite.getAllMeals(function(meals_list:any){
+        res.send(meals_list);
     });
 });
 

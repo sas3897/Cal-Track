@@ -11,6 +11,7 @@ $(document).ready(function(){
                 break;
             case "Meal":
                 template_container.html(load_meal_template());
+                load_meal_scripts();
                 break;
             case "Recipe":
                 template_container.html(load_recipe_template());
@@ -52,7 +53,7 @@ $(document).ready(function(){
             '<label class="lone-input" for="ing_protein">Protein:</label>' +
             '<input class="lone-input" type="number" step="any" min="0" id="ing_protein" name="ing_protein">' +
 
-            '<input class="lone-input" id="submit_btn" type="button" value="Add Ingredient">' +
+            '<input class="lone-input" id="submit_btn" type="button" value="Save">' +
         '</div>';
     }
 
@@ -141,7 +142,6 @@ $(document).ready(function(){
             $(`select[id='${select_id}']`).on("change", function(){
                 let name_container = $("div[id='name_container']");
                 let ing = $(this).val();
-                let submit_btn = $("#submit_btn");
 
                 $("div[id='servings_container']").html("<span>Servings</span>");
                 if(ing == "none"){
@@ -149,8 +149,6 @@ $(document).ready(function(){
                     
                     $("input[id^='ing']").val("");
                     add_serving_pair();
-
-                    submit_btn.val("Add Ingredient");
                 }
                 else{
                     name_container.hide();
@@ -185,8 +183,6 @@ $(document).ready(function(){
                                 .trigger("change");
                             $(`input[id='amount_${idx}']`).val(serv_pair.amount);
                         }
-
-                        submit_btn.val("Update Ingredient");
                     });
                 }
             });
@@ -237,11 +233,186 @@ $(document).ready(function(){
 
     //Meal section
     function load_meal_template(){
-        return "";
+        return '<div>' + 
+            '<div style="float: left; display: none;" class="alert alert-danger" id="warning_container"></div>' +
+
+            '<div class="lone-input" style="margin-bottom:16px" id="existing_container">' +
+                '<span style="margin-right:16px;">Meals</span>' +
+            '</div>' + 
+
+            '<div id="ingredients_options_container">' +
+                '<div style="width=100%">If the ingredient has already been added, its amount will increase by one serving size.</div>' +
+                '<select id="ingredients_list">' +
+                '</select>' +
+                '<input id="add_ingredient_btn" type="button" value="Add Ingredient">' +
+            '</div>' +
+            '<div>' +
+                '<table>' +
+                    '<tbody id="ingredients_container">' +
+                        '<tr>' +
+                            '<th>Name</th>' +
+                            '<th>Unit</th>' + 
+                            '<th>Amount</th>' + 
+                            '<th>Calories</th>' +
+                            '<th>Fat</th>' +
+                            '<th>Carbs</th>' +
+                            '<th>Fiber</th>' +
+                            '<th>Protein</th>' +
+                        '</tr>' +
+                    '</tbody>' + 
+                    '<tfoot id="totals_container"></tfoot>' +
+                '</table>' +
+            '</div>' +
+
+            '<div id="submit_container>' + 
+                '<div style="width:100%">Any ingredients with amount 0 will not be included.</div>' +
+                '<div id="name_container">' + 
+                    '<label class="lone-input" for="meal_name_input">Name:</label>' +
+                    '<input class="lone-input" id="meal_name_input"></input>' +
+                '</div>' + 
+
+                '<div>' +
+                    '<label class="lone-input" for="meal_weight_input">Weight:</label>' +
+                    '<input class="lone-input" type="number" id="meal_weight_input"></input>' +
+                '</div>' +
+                '<input type="button" id="submit_btn" value="Save"></input>' +
+            '</div>' +
+        '</div>';
     }
 
     function load_meal_scripts(){
+        let existing_container = $("div[id='existing_container']");
+        let ingredients_container = $("tbody[id='ingredients_container']"); 
+        let nutrient_ids = ["calories", "fat", "carb", "fiber", "protein"];
+        let meal_name_input = $("#meal_name_input");
 
+        $.ajax({
+            type: 'get',
+            url: "get_ingredient_list",
+            dataType: 'json'
+        })
+        .done(function(ing_list){
+            let ing_options = "";
+            for(let ing_obj of ing_list){
+                let ing_name = ing_obj.ingredient_name;
+                ing_options += `<option value='${ing_name}'>${ing_name}</option>`;
+            }
+            $("select[id='ingredients_list']").html(ing_options);
+        });
+
+        $.ajax({
+            type: 'get',
+            url: "get_meal_list",
+            dataType: 'json'
+        })
+        .done(function(meal_list){
+            let select_id = "existing_select";
+            let meal_select = `<select id='${select_id}'><option value='none'>[New Meal]</option>`;
+            for(let meal_obj of meal_list){
+                meal_select += `<option value='${meal_obj.meal_id}'>${meal_obj.meal_name}</option>`;
+            }
+            meal_select += "</select>";
+
+            existing_container.append(meal_select);
+
+            $(`select[id='${select_id}']`).on("change", function(){
+                let name_container = $("div[id='name_container']");
+                let meal = $(this).val();
+                //TODO replace with a better div-based solution
+                //Clear out the container in anticipation of the new inputs
+                ingredients_container.html(
+                    '<tr>' +
+                        '<th>Name</th>' +
+                        '<th>Unit</th>' + 
+                        '<th>Amount</th>' + 
+                        '<th>Calories</th>' +
+                        '<th>Fat</th>' +
+                        '<th>Carbs</th>' +
+                        '<th>Fiber</th>' +
+                        '<th>Protein</th>' +
+                    '</tr>' 
+                )
+                if(meal == "none"){
+                    meal_name_input.val("");
+                    name_container.show();
+                }
+                else{
+                    name_container.hide();
+                    $("div[id='ingredients_options_container']").hide();
+                    $.ajax({
+                        type: 'post',
+                        url: '/get_meal',
+                        data: {meal_id: meal},
+                        dataType: 'json',
+
+                    })
+                    .done(function(meal_info){
+                        meal_name_input.val(meal_info.meal_name);
+                        $("#meal_weight_input").val(meal_info.total_weight)
+                        $("#calories_total").text(meal_info.calories.toFixed(2));
+                        $("#fat_total").text(meal_info.fat.toFixed(2));
+                        $("#carbs_total").text(meal_info.carb.toFixed(2));
+                        $("#fiber_total").text(meal_info.fiber.toFixed(2));
+                        $("#protein_total").text(meal_info.protein.toFixed(2));
+                    });
+                }
+            });
+
+            update_totals();
+        });
+
+        //Add the ingredient to the list
+        $("#add_ingredient_btn").on('click', function(e){
+            add_ingredient(nutrient_ids);
+        });
+        
+
+        ingredients_container.on('update', function(){
+            update_totals();
+        });
+
+        $("#submit_btn").on('click', function(e){
+            let meal_name = $("#meal_name_input").val(); 
+            let meal_weight = $("#meal_weight_input").val();
+            //TODO replace this with a more elegant error message box
+            if(meal_name == "" || meal_weight == ""){
+                alert("You must provide a name and weight!");
+                return;
+            }
+            meal_weight = parseFloat($("#meal_weight_input").val());
+
+            let nutrient_totals = []
+            if(meal_weight != 0){
+                nutrient_totals = [
+                    parseFloat($("#calories_total").text())/meal_weight,
+                    parseFloat($("#fat_total").text())/meal_weight,
+                    parseFloat($("#carbs_total").text())/meal_weight,
+                    parseFloat($("#fiber_total").text())/meal_weight,
+                    parseFloat($("#protein_total").text())/meal_weight
+                ]
+            }
+            
+            $.ajax({
+                type: 'post',
+                url: '/add_meal',
+                data: {
+                    meal_name: meal_name, 
+                    meal_weight: parseFloat(meal_weight), 
+                    nutrients: nutrient_totals
+                },
+                dataType: 'json'
+            })
+            .done(function(maybeError){
+                if(maybeError.err != null){
+                    let warning_container = $("#warning_container");
+                    warning_container.text(maybeError.err);
+                    warning_container.show();
+                }
+                else{
+                    $("#warning_container").hide();
+                }
+            });
+        });
     }
 
     //Recipe section
@@ -283,7 +454,7 @@ $(document).ready(function(){
                     '<label class="lone-input" for="recipe_name_input">Name:</label>' +
                     '<input class="lone-input" id="recipe_name_input"></input>' +
                 '</div>' + 
-                '<input type="button" id="submit_btn" value="Add Recipe"></input>' +
+                '<input type="button" id="submit_btn" value="Save"></input>' +
             '</div>' +
         '</div>';
     }
@@ -327,7 +498,6 @@ $(document).ready(function(){
             $(`select[id='${select_id}']`).on("change", function(){
                 let name_container = $("div[id='name_container']");
                 let recipe = $(this).val();
-                let submit_btn = $("#submit_btn");
 
                 //TODO replace with a better div-based solution
                 //Clear out the container in anticipation of the new inputs
@@ -348,8 +518,6 @@ $(document).ready(function(){
                     name_container.show();
 
                     update_totals();
-                    
-                    submit_btn.val("Add Recipe");
                 }
                 else{
                     recipe_name_input.val(recipe);
@@ -389,8 +557,6 @@ $(document).ready(function(){
                                 ing_nutr_map[ing_name], ing_unit_map[ing_name], 
                                 ing_ratio_map[ing_name]); 
                         }
-
-                        submit_btn.val("Update Recipe");
                     });
                 }
             });

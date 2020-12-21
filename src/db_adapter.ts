@@ -195,7 +195,7 @@ module.exports = {
             callback(res);
         });
     },
-    enterMeal: function(meal_name:string, meal_weight:number, nutrients:string[], succ_callback:any, dup_callback:any){
+    createOrUpdateMeal: function(meal_name:string, meal_weight:number, nutrients:string[], callback:any){
         let check_name_query = 'SELECT meal_name FROM meals where meal_name=?';
         db.get(check_name_query, meal_name, (err:any, row:any) => {
             if(err){
@@ -204,24 +204,37 @@ module.exports = {
             if(row === undefined){
                 let enter_recipe_query = 
                     "INSERT INTO meals (meal_name, creation_date, total_weight, calories, fat, carb, fiber, protein) VALUES (?,datetime('now', 'localtime'),?,?,?,?,?,?)";
-                let values:string[] = [meal_name, meal_weight.toString()];
-                values = values.concat(nutrients);
+                let values:string[] = [meal_name, meal_weight.toString()].concat(nutrients);
                 db.run(enter_recipe_query, values, function(err:any){
                     if(err){
                         return console.log(err.message);
                     }
-
-                    succ_callback();
+                    callback(err);
                 });
             }
             else{
-                dup_callback();
+                if(meal_weight > 0){
+                    let update_meal_query = 
+                        "UPDATE meals " + 
+                        "SET total_weight=? " +
+                        "WHERE meal_name=?";
+                    db.run(update_meal_query, [meal_weight, meal_name], (err:any, row:any) => {
+                        if(err){
+                            return console.log(err.message);
+                        }
+                        callback(err);
+                    });
+                }
+                else{
+                    let delete_query = "DELETE FROM meals WHERE meal_name=?";
+                    db.run(delete_query, [meal_name]);
+                }
             }
         }); 
     },
     getMeal: function(meal_id:number, callback:any){
         let get_meal_query = 
-            "SELECT creation_date, total_weight, calories, fat, carb, protein, fiber " +
+            "SELECT creation_date, meal_name, total_weight, calories, fat, carb, protein, fiber " +
             "FROM meals " + 
             "WHERE meal_id=?";
         db.get(get_meal_query, meal_id, (err:any, row:any) => {
@@ -256,24 +269,4 @@ module.exports = {
             callback(res);
         });
     },
-    enterMealCalEntry: function(username:string, meal_id:number, amnt_eaten:number, cal_vals:string[], meal_vals:string[]){
-        let update_meal_query = 
-            "UPDATE meals " + 
-            "SET total_weight=?," + 
-            "calories=?," + 
-            "fat=?," + 
-            "carb=?," + 
-            "fiber=?," + 
-            "protein=? " + 
-            "WHERE meal_id = ?"
-        let values:string[] = [amnt_eaten.toString()];
-        values = values.concat(meal_vals);
-        values.push(meal_id.toString());
-        db.run(update_meal_query, values, function(err:any){
-            if(err){
-                console.log(err.message);
-            }
-            module.exports.enterCalEntry(username, cal_vals); 
-        });
-    }
 }

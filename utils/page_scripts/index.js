@@ -15,6 +15,7 @@ $(document).ready(function(){
     let prev_timespan = '';
     let starting_option = $("div[id='timespan_options'] input[value='week']");
     let weight_input = $('#weight_input');
+    let meal_ratio_map = {};
 
     //Add the ingredient to the list
     $("#add_ingredient_btn").on('click', function(e){
@@ -26,8 +27,22 @@ $(document).ready(function(){
         update_totals();
     });
 
+    $.ajax({
+        type: 'get',
+        url: "get_meal_list",
+        dataType: 'json'
+    })
+    .done(function(meal_list){
+        let meal_select = "";
+        for(let meal of meal_list){
+            meal_select += `<option value='${meal.meal_id}'>${meal.meal_name} (${meal.total_weight}) </option>`;
+        }
+        $("select[id='meals_list']").append(meal_select);
+    });
+
+
     $("#add_recipe_ings_btn").on('click', function(e){
-        var recipe_name = $('select[id=recipes_list]').val();
+        let recipe_name = $("select[id='recipes_list']").val();
 
         $.ajax({
             type: 'post',
@@ -66,58 +81,58 @@ $(document).ready(function(){
         });
     });
 
-    function getNutrientTotals(){
-        let ingredient_rows = $("#ingredients_container tr");
-        //There's always a header row we have to ignore
-        //TODO replace this with a more elegant error message box
-        if(ingredient_rows.length <= 1){
-            alert("You need to have at least one ingredient!");
-            return;
-        }
-        
-        let nutrients_list = [
-            $("#calories_total").text(),
-            $("#fat_total").text(),
-            $("#carbs_total").text(),
-            $("#fiber_total").text(),
-            $("#protein_total").text()
-        ]
+    $("#add_meal_btn").on('click', function(e){
+        let meal_id = $("select[id='meals_list']").val(); 
 
-        return nutrients_list;
-    }
-
-    $("#enter_meal_btn").on('click', function(evt){
-        let meal_name = $("#meal_name_input").val(); 
-        let meal_weight = $("#meal_weight_input").val();
-        //TODO replace this with a more elegant error message box
-        if(meal_name == "" || meal_weight == ""){
-            alert("You must provide a name and weight!");
-            return;
-        }
-        
         $.ajax({
             type: 'post',
-            url: '/add_meal',
-            data: {
-                meal_name: meal_name, 
-                meal_weight: parseFloat(meal_weight), 
-                nutrients: getNutrientTotals()
-            },
+            url: '/get_meal',
+            data: {meal_id: meal_id},
             dataType: 'json'
         })
-        .done(function(maybeError){
-            if(maybeError.err != ""){
-                let warning_container = $("#warning_container");
-                warning_container.text(maybeError.err);
-                warning_container.show();
-            }
-            else{
-                $("#warning_container").hide();
+        .done(function(mealInfo){
+            let meal_name = mealInfo.meal_name;
+            let maybeEntry = $(`[id='${meal_name}']`);
+            //Only add this meal once
+            if(maybeEntry.length === 0){
+                meal_ratio_map[meal_name] = {'amount': mealInfo.total_weight};
+                nutrient_ids.forEach(function(id){
+                    meal_ratio_map[meal_name][id] = mealInfo[id];
+                });
+
+                let total_weight = mealInfo.total_weight;
+                $("#ingredients_container").append(
+                    `<tr id='${meal_name}'>` +
+                        `<td id='ing_name'>${meal_name} (${total_weight})</td>` +
+                        '<td>N/A</td>' +
+                        `<td><input id='amount' type='number' step='any' min='0' max='${total_weight}' value='${total_weight}'></input></td>` +
+                        `<td id='${nutrient_ids[0]}'>${(mealInfo.calories * total_weight).toFixed(2)}</td>` +
+                        `<td id='${nutrient_ids[1]}'>${(mealInfo.fat * total_weight).toFixed(2)}</td>` +
+                        `<td id='${nutrient_ids[2]}'>${(mealInfo.carb * total_weight).toFixed(2)}</td>` +
+                        `<td id='${nutrient_ids[3]}'>${(mealInfo.fiber * total_weight).toFixed(2)}</td>` +
+                        `<td id='${nutrient_ids[4]}'>${(mealInfo.protein * total_weight).toFixed(2)}</td>` +
+                    "</tr>"
+                );
+
+                //No longer a maybe, in this case
+                maybeEntry = $(`[id='${meal_name}']`);
+                let amount = maybeEntry.find("#amount");
+
+                //The ratio between the current unit's serving size
+                amount.on('change', function(){
+                    let newAmount = parseFloat($(this).val());
+                    nutrient_ids.forEach(function(id){
+                        let nutrient = maybeEntry.find(`#${id}`);
+                        nutrient.text((meal_ratio_map[meal_name][id] * newAmount).toFixed(2));
+                    })
+                    $("#ingredients_container").trigger('update');
+                });
+                $("#ingredients_container").trigger('update');
             }
         });
-
     });
 
+    //TODO rename this button
     $("#one_off_btn").on('click', function(e){
         $.ajax({
             type: 'post',
@@ -131,6 +146,19 @@ $(document).ready(function(){
                 $("input[name='timespan']:checked").trigger('change');
             }
         });
+        for(let meal_name of Object.keys(meal_ratio_map)){
+            let remaining_weight = meal_ratio_map[meal_name]['amount'] - parseFloat($(`[id='${meal_name}'] #amount`).val());
+            $.ajax({
+                type: 'post',
+                url: '/add_meal',
+                data: {
+                    meal_name: meal_name, 
+                    meal_weight: remaining_weight, 
+                    nutrients: []
+                },
+                dataType : 'json'
+            });
+        }
     });
 
     $("#weight_submit_btn").on('click', function(e){
