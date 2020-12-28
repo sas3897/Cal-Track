@@ -317,6 +317,7 @@ $(document).ready(function(){
 
             $(`select[id='${select_id}']`).on("change", function(){
                 let name_container = $("div[id='name_container']");
+                let ing_options_container = $("div[id='ingredients_options_container']");
                 let meal = $(this).val();
                 //TODO replace with a better div-based solution
                 //Clear out the container in anticipation of the new inputs
@@ -335,10 +336,17 @@ $(document).ready(function(){
                 if(meal == "none"){
                     meal_name_input.val("");
                     name_container.show();
+                    ing_options_container.show();
+                    $("#meal_weight_input").val("")
+                    $("#calories_total").text(0);
+                    $("#fat_total").text(0);
+                    $("#carbs_total").text(0);
+                    $("#fiber_total").text(0);
+                    $("#protein_total").text(0);
                 }
                 else{
                     name_container.hide();
-                    $("div[id='ingredients_options_container']").hide();
+                    ing_options_container.hide();
                     $.ajax({
                         type: 'post',
                         url: '/get_meal',
@@ -347,13 +355,14 @@ $(document).ready(function(){
 
                     })
                     .done(function(meal_info){
+                        let total_weight = meal_info.total_weight;
                         meal_name_input.val(meal_info.meal_name);
-                        $("#meal_weight_input").val(meal_info.total_weight)
-                        $("#calories_total").text(meal_info.calories.toFixed(2));
-                        $("#fat_total").text(meal_info.fat.toFixed(2));
-                        $("#carbs_total").text(meal_info.carb.toFixed(2));
-                        $("#fiber_total").text(meal_info.fiber.toFixed(2));
-                        $("#protein_total").text(meal_info.protein.toFixed(2));
+                        $("#meal_weight_input").val(total_weight)
+                        $("#calories_total").text((meal_info.calories * total_weight).toFixed(2));
+                        $("#fat_total").text((meal_info.fat * total_weight).toFixed(2));
+                        $("#carbs_total").text((meal_info.carb * total_weight).toFixed(2));
+                        $("#fiber_total").text((meal_info.fiber * total_weight).toFixed(2));
+                        $("#protein_total").text((meal_info.protein * total_weight).toFixed(2));
                     });
                 }
             });
