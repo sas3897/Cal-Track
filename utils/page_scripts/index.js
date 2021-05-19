@@ -9,6 +9,7 @@ $(document).ready(function(){
                 '<div class="cal_cell_head">Carbs</div>' +
                 '<div class="cal_cell_head">Fiber</div>' +
                 '<div class="cal_cell_head">Protein</div>' +
+                '<div class="cal_cell_head"></div>' +
             '</div>' +
         '</div>';
     let timespan_options = $("div[id='timespan_options'] input[name='timespan']");
@@ -25,6 +26,25 @@ $(document).ready(function(){
 
     $("#ingredients_container").on('update', function(){
         update_totals();
+    });
+
+    $("#cal_entries_table").on('click', '.cal_entry_del', function(){
+        let cal_entry_id = $(this).closest(".cal_row").attr("id");
+        $.ajax({
+            type: 'post',
+            url: 'del_calorie_entry',
+            data: {entry_id: cal_entry_id},
+            dataType: 'json',
+        })
+        .done(function(statusMsg){
+            if(statusMsg.status != "error"){
+                prev_timespan = '';
+                $("input[name='timespan']:checked").trigger('change');
+            }
+            else{
+                alert("Failed to delete entry.");
+            }
+        });
     });
 
     $.ajax({
@@ -132,8 +152,7 @@ $(document).ready(function(){
         });
     });
 
-    //TODO rename this button
-    $("#one_off_btn").on('click', function(e){
+    $("#submit_entry_btn").on('click', function(e){
         $.ajax({
             type: 'post',
             url: '/enter_cal_entry',
@@ -144,6 +163,8 @@ $(document).ready(function(){
             if(statusMsg.status != "error"){
                 prev_timespan = '';
                 $("input[name='timespan']:checked").trigger('change');
+                $("#ingredients_container").empty();
+                update_totals();
             }
         });
         for(let meal_name of Object.keys(meal_ratio_map)){
@@ -217,6 +238,20 @@ $(document).ready(function(){
         prev_timespan = timespan_val; 
     });
 
+    
+
+
+    function create_cal_entry_total_row(nutrients_list){
+        return `<div class='totals cal_row'>` + 
+                `<div class='cal_cell_first'>Total:</div>` +
+                `<div class='cal_cell'>${nutrients_list.calories.toFixed(2)}</div>` +
+                `<div class='cal_cell'>${nutrients_list.fat.toFixed(2)}</div>` +
+                `<div class='cal_cell'>${nutrients_list.carb.toFixed(2)}</div>` +
+                `<div class='cal_cell'>${nutrients_list.fiber.toFixed(2)}</div>` +
+                `<div class='cal_cell'>${nutrients_list.protein.toFixed(2)}</div>` +
+                `</div></div>`;
+    }
+
     function get_cal_entries_for_timespan(timespan_val){
         let str_timespan = timespan_val.toJSON().replace("T", " ").replace("Z", "");
         $.ajax({
@@ -234,27 +269,21 @@ $(document).ready(function(){
             for(let entry of cal_entries_list){
                 if(entry.dt != prev_date){
                     if(prev_date != ""){
-                        new_list_html += `<div class='totals cal_row'>` + 
-                            `<div class='cal_cell_first'>Total:</div>` +
-                            `<div class='cal_cell'>${nutrients_list.calories}</div>` +
-                            `<div class='cal_cell'>${nutrients_list.fat}</div>` +
-                            `<div class='cal_cell'>${nutrients_list.carb}</div>` +
-                            `<div class='cal_cell'>${nutrients_list.fiber}</div>` +
-                            `<div class='cal_cell'>${nutrients_list.protein}</div>` +
-                            `</div></div>`;
+                        new_list_html += create_cal_entry_total_row(nutrients_list);
                     }
                     new_list_html += `<div class='cal_body'><div class='cal_row'><div class='cal_date_head cal_cell'>${entry.dt}</div></div>`;
                     
                     prev_date = entry.dt;
                     nutrients_list = {'calories': 0, 'fat': 0, 'carb': 0, 'fiber': 0, 'protein': 0};
                 }
-                new_list_html += `<div class='cal_row'>` + 
+                new_list_html += `<div class='cal_row' id='${entry.entry_id}'>` + 
                     `<div class='cal_cell_first'>${entry.tm}</div>` +
                     `<div class='cal_cell'>${entry.calories}</div>` +
                     `<div class='cal_cell'>${entry.fat}</div>` +
                     `<div class='cal_cell'>${entry.carb}</div>` +
                     `<div class='cal_cell'>${entry.fiber}</div>` +
                     `<div class='cal_cell'>${entry.protein}</div>` +
+                    `<div class='cal_cell'><button type='button' class='cal_entry_del'>x</button></div>` +
                     `</div>`;
 
                 nutrients_list['calories'] += entry.calories;
@@ -263,14 +292,7 @@ $(document).ready(function(){
                 nutrients_list['fiber'] += entry.fiber;
                 nutrients_list['protein'] += entry.protein;
             }
-            new_list_html += `<div class='totals cal_row'>` + 
-                `<div class='cal_cell_first'>Total:</div>` +
-                `<div class='cal_cell'>${nutrients_list.calories}</div>` +
-                `<div class='cal_cell'>${nutrients_list.fat}</div>` +
-                `<div class='cal_cell'>${nutrients_list.carb}</div>` +
-                `<div class='cal_cell'>${nutrients_list.fiber}</div>` +
-                `<div class='cal_cell'>${nutrients_list.protein}</div>` +
-                `</div></div>`;
+            new_list_html += create_cal_entry_total_row(nutrients_list);
 
             cal_entries_table.html(cal_header + new_list_html);
         });
@@ -310,4 +332,5 @@ $(document).ready(function(){
 
     starting_option.prop("checked", true);
     starting_option.trigger('change');
+    update_totals();
 });

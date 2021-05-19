@@ -11,7 +11,7 @@ function total_up(id){
     $(`[id='${id}']`).each(function(){
         total += parseFloat($(this).text());
     });
-    return total;
+    return total.toFixed(2);
 }
 
 function update_totals(){
@@ -144,7 +144,7 @@ function getNutrientTotals(){
     let ingredient_rows = $("#ingredients_container tr");
     //There's always a header row we have to ignore
     //TODO replace this with a more elegant error message box
-    if(ingredient_rows.length <= 1){
+    if(ingredient_rows.length <= 0){
         alert("You need to have at least one ingredient!");
         return;
     }

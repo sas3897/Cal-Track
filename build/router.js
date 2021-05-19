@@ -126,14 +126,19 @@ server.post("/get_meal", function (req, res) {
     });
 });
 server.post("/enter_cal_entry", function (req, res) {
-    sqlite.enterCalEntry(req.cookies.username, req.body.nutrients, function (err) {
-        if (err) {
-            res.send({ status: "error" });
-        }
-        else {
-            res.send({ status: "success" });
-        }
-    });
+    if (is_logged_in(req)) {
+        sqlite.enterCalEntry(req.cookies.username, req.body.nutrients, function (err) {
+            if (err) {
+                res.send({ status: "error" });
+            }
+            else {
+                res.send({ status: "success" });
+            }
+        });
+    }
+    else {
+        res.redirect("/login");
+    }
 });
 server.post("/enter_meal_cal_entry", function (req, res) {
     sqlite.enterMealCalEntry(req.cookies.username, parseInt(req.body.meal_id), parseFloat(req.body.amnt_left), req.body.cal_vals, req.body.meal_vals);
@@ -180,6 +185,21 @@ server.post("/get_calorie_entries", function (req, res) {
     if (is_logged_in(req)) {
         sqlite.getCalEntries(req.cookies.username, req.body.timespan, function (calories_list) {
             res.send(calories_list);
+        });
+    }
+    else {
+        res.redirect("/login");
+    }
+});
+server.post("/del_calorie_entry", function (req, res) {
+    if (is_logged_in(req)) {
+        sqlite.delCalEntry(req.body.entry_id, function (err) {
+            if (err) {
+                res.send({ status: "error" });
+            }
+            else {
+                res.send({ status: "success" });
+            }
         });
     }
     else {

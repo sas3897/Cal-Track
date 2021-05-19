@@ -113,7 +113,7 @@
             </div>
             <div>
                 <table>
-                    <tbody id="ingredients_container">
+                    <thead>
                         <tr>
                             <th>Name</th>
                             <th>Unit</th>
@@ -124,12 +124,15 @@
                             <th>Fiber</th>
                             <th>Protein</th>
                         </tr>
+                    </thead>
+                    <tbody id="ingredients_container">
+
                     </tbody>
                     <tfoot id="totals_container"></tfoot>
                 </table>
             </div>
             <div>Any ingredients with amount 0 will not be included.</div>
-            <input type="submit" id="one_off_btn" name="action" value="I Ate It!">
+            <input type="submit" id="submit_entry_btn" name="action" value="I Ate It!">
         </div>
     </body>
 </html>

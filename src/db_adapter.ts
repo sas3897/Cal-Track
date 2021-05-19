@@ -17,8 +17,9 @@ module.exports = {
             if(err){
                 return console.log(err.message);
             }   
-            let enter_units_query = "INSERT INTO ingredient_serving_units(ingredient_name, unit, amount) VALUES ";
-            enter_units_query += units.map(() => "(?, ?, ?)").join(', '); 
+            let enter_units_query = 
+                "INSERT INTO ingredient_serving_units(ingredient_name, unit, amount) VALUES "
+                + units.map(() => "(?, ?, ?)").join(', '); 
 
             let unit_values:string[] = [];
             for(let idx = 0;idx < units.length; idx++){
@@ -258,7 +259,7 @@ module.exports = {
     },
     getCalEntries: function(username:string, timespan:string, callback:any){
         let get_cal_entries_query = 
-            "SELECT date(entry_datetime) as dt, time(entry_datetime) as tm, calories, fat, carb, fiber, protein " + 
+            "SELECT entry_id, date(entry_datetime) as dt, time(entry_datetime) as tm, calories, fat, carb, fiber, protein " + 
             "FROM cal_entries " +
             "WHERE username=? AND dt>date(?)" + 
             "ORDER BY dt DESC";
@@ -267,6 +268,20 @@ module.exports = {
                 return console.log(err.message);
             }
             callback(res);
+        });
+    },
+    delCalEntry: function(cal_entry_id:number, callback:any){
+        //TODO it'd be good to do a check that the user making this call is the same one associated with the cal entry
+        let del_cal_entry_query = 
+            "DELETE FROM cal_entries " +
+            "WHERE entry_id=?";
+        db.run(del_cal_entry_query, [cal_entry_id], function(err:any){
+            if(err){
+                callback(err);
+                return console.log(err.message);
+            }
+
+            callback("");
         });
     },
 }
