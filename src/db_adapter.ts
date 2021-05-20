@@ -284,4 +284,17 @@ module.exports = {
             callback("");
         });
     },
+    delIngredient: function(ingredient_name:string, callback:any){
+        let del_ing_query = 
+            "DELETE FROM ingredient_servings " + 
+            "WHERE ingredient_name=?";
+        db.run(del_ing_query, [ingredient_name], function(err:any){
+            if(err){
+                callback(err);
+                return console.log(err.message);
+            }
+
+            callback("");
+        });
+    },
 }

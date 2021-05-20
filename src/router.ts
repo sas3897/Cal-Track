@@ -246,6 +246,17 @@ server.post("/del_calorie_entry", function(req:any, res:any){
     }
 });
 
+server.post("/del_ingredient", function(req:any, res:any){
+    sqlite.delIngredient(req.body.ing_name, function(err:any){
+        if(err){
+            res.send({status:"error"});
+        }
+        else{
+            res.send({status:"success"});
+        }
+    });
+});
+
 function is_logged_in(req:any){
     //Is there a username, or no?
     return req.cookies.username !== undefined;

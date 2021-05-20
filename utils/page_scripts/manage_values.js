@@ -35,7 +35,7 @@ $(document).ready(function(){
             '</div>' +
 
             '<div class="lone-input" id="servings_container">' +
-                '<span>Servings</span>' +
+                serving_html() +
             '</div>' + 
 
             '<label class="lone-input" for="ing_calorie">Calories:</label>' +
@@ -53,56 +53,70 @@ $(document).ready(function(){
             '<label class="lone-input" for="ing_protein">Protein:</label>' +
             '<input class="lone-input" type="number" step="any" min="0" id="ing_protein" name="ing_protein">' +
 
-            '<input class="lone-input" id="submit_btn" type="button" value="Save">' +
+            '<div class="lone-input">' +
+                '<input id="submit_btn" type="button" value="Save">' +
+                '<input style="margin-left:8px;" id="delete_btn" type="button" value="Delete">' +
+            '</div>' +
         '</div>';
+    }
+
+    //helper to maintain consistency
+    function serving_html(){
+        return '<span>Servings</span>' +
+            '<button id="add_serving_btn" style="margin-left:12px;" type="button" class="btn btn-sm btn-primary">Add</button>';
     }
 
     function load_ing_scripts(){
         let units_list = ["g", "tbsp", "tsp", "cup", "mL", "oz"];
         let used_units_list = [];
+        let select_id = "existing_select"
         let existing_container = $("div[id='existing_container']");
+        let serv_container = $("div[id='servings_container']");
+        let ing_del_btn = $("#delete_btn");
+        ing_del_btn.hide();
+
+        serv_container.on("click", ".del-serving-btn", (e) => {
+            let $this = $(e.target);
+
+            //Free up the unit to be selected again
+            let select = $this.parent().find("select"); 
+            let select_idx = used_units_list.indexOf(select.val()); 
+            used_units_list.splice(select_idx, 1);
+            select.val("none");
+            select.trigger("change");
+
+            $this.parent().remove() 
+        });
+
+
+        $("[id='add_serving_btn']").on("click", add_serving_btn_handler);
+
+        function add_serving_btn_handler(){
+            if(serv_container.children().length > units_list.length){
+                return;
+            }
+
+            add_serving_pair();
+        }
 
         function add_serving_pair(){ 
-            let serv_container = $("div[id='servings_container']");
-            let num_pairings = serv_container.find("button").length;
+            let curr_num_pairings = serv_container.find("select").length;
 
             let remaining_units = units_list.filter( ele => !used_units_list.includes(ele));
-            let unit_input = `<select style="width:6.5rem" id='unit_${num_pairings}'><option value='none'>Select unit</option>`;
+            let unit_input = `<select style="width:6.5rem" id='unit_${curr_num_pairings}'><option value='none'>Select unit</option>`;
             for(let unit of remaining_units){
                 unit_input += `<option value=${unit}>${unit}</option>`;
             }
             unit_input += "</select>";
             
-            let amount_input = `<input id='amount_${num_pairings}' step="any" type="number" min="0" placeholder='10'></input>`;
-            let serv_add_btn = `<button id='add_serving_btn' type='button' class='btn btn-sm btn-primary'>Add</button>`;
+            let amount_input = `<input id='amount_${curr_num_pairings}' step="any" type="number" min="0" placeholder='10'></input>`;
+            let serv_del_btn = `<button type='button' class='del-serving-btn btn btn-sm btn-primary'>Del</button>`;
 
-            let serv_pairing = `<div class="ing_form"> ${unit_input}${amount_input}${serv_add_btn}</div>`;
+            let serv_pairing = `<div class="ing_form"> ${unit_input}${amount_input}${serv_del_btn}</div>`;
 
             serv_container.append(serv_pairing);
 
-            $("[id='add_serving_btn']").on("click", (e) => {
-                if(serv_container.children().length > units_list.length){
-                    return;
-                }
-                let $this = $(e.target);
-                $this.off("click");
-                $this.text("Del");
-                $this.attr('id', '');
-                $this.on("click", () => {
-                    let select = $this.parent().find("select"); 
-                    let select_idx = used_units_list.indexOf(select.val()); 
-                    used_units_list.splice(select_idx, 1);
-                    console.log("is it this?");
-                    select.val("none");
-                    select.trigger("change");
-
-                    $this.parent().remove() 
-                });
-
-                add_serving_pair();
-            });
-
-            $(`[id='unit_${num_pairings}']`).on("change", (e) => {
+            $(`[id='unit_${curr_num_pairings}']`).on("change", (e) => {
                 used_units_list = []
                 let unit_selects = $("select[id^='unit']");
                 unit_selects.each( function(){
@@ -123,13 +137,14 @@ $(document).ready(function(){
             });
         }
 
+
+
         $.ajax({
             type: 'get',
             url: "get_ingredient_list",
             dataType: 'json'
         })
         .done(function(ingredients_list){
-            let select_id = "existing_select"
             let ing_select = `<select id='${select_id}'><option value='none'>[New Ingredient]</option>`;
             for(let ing_obj of ingredients_list){
                 let ing_name = ing_obj.ingredient_name;
@@ -143,15 +158,20 @@ $(document).ready(function(){
                 let name_container = $("div[id='name_container']");
                 let ing = $(this).val();
 
-                $("div[id='servings_container']").html("<span>Servings</span>");
+                serv_container.html(serving_html());
+
+                $("[id='add_serving_btn']").on("click", add_serving_btn_handler);
+
                 if(ing == "none"){
                     name_container.show();
+                    ing_del_btn.hide();
                     
                     $("input[id^='ing']").val("");
                     add_serving_pair();
                 }
                 else{
                     name_container.hide();
+                    ing_del_btn.show();
                     $.ajax({
                         type: 'post',
                         url: '/get_ingredient',
@@ -172,13 +192,7 @@ $(document).ready(function(){
 
                         for(let idx in ing_info.units){
                             let serv_pair = ing_info.units[idx];
-                            if(parseInt(idx) > 0){
-                                $("[id='add_serving_btn']").trigger('click');
-                            }
-                            else{
-                                add_serving_pair();
-                            }
-                            console.log(serv_pair.unit);
+                            $("[id='add_serving_btn']").trigger('click');
                             $(`select[id='unit_${idx}']`).val(serv_pair.unit)
                                 .trigger("change");
                             $(`input[id='amount_${idx}']`).val(serv_pair.amount);
@@ -191,7 +205,7 @@ $(document).ready(function(){
 
         //Init serving pair
         add_serving_pair();
-        $("#submit_btn").on("click", function(e){
+        $("#submit_btn").on("click", function(){
             let nutrient_info = [
                 $("#ing_calorie").val(),
                 $("#ing_fat").val(),
@@ -228,6 +242,30 @@ $(document).ready(function(){
                         $("#warning_container").hide();
                     }
                 });
+        });
+
+        ing_del_btn.on("click", function(){
+            let selected_ing =  $(`#${select_id} option:selected`);
+            let ing_name = selected_ing.text();
+            $.ajax({
+                type: 'post',
+                url: '/del_ingredient',
+                data: {
+                    ing_name : ing_name
+                },
+                dataType: 'json'
+            })
+            .done(function(statusMsg){
+                if(statusMsg.status != "error"){
+                    selected_ing.remove();
+                    let select = $(`select[id='${select_id}']`);
+                    select.val("none");
+                    select.trigger("change");
+                }
+                else{
+                    alert("Failed to delete ingredient.");
+                }
+            });
         });
     }
 
@@ -275,7 +313,10 @@ $(document).ready(function(){
                     '<label class="lone-input" for="meal_weight_input">Weight:</label>' +
                     '<input class="lone-input" type="number" id="meal_weight_input"></input>' +
                 '</div>' +
-                '<input type="button" id="submit_btn" value="Save"></input>' +
+                '<div class="lone-input">' +
+                    '<input id="submit_btn" type="button" value="Save">' +
+                    '<input style="margin-left:8px;" id="delete_btn" type="button" value="Delete">' +
+                '</div>' +
             '</div>' +
         '</div>';
     }
@@ -463,7 +504,10 @@ $(document).ready(function(){
                     '<label class="lone-input" for="recipe_name_input">Name:</label>' +
                     '<input class="lone-input" id="recipe_name_input"></input>' +
                 '</div>' + 
-                '<input type="button" id="submit_btn" value="Save"></input>' +
+                '<div class="lone-input">' +
+                    '<input id="submit_btn" type="button" value="Save">' +
+                    '<input style="margin-left:8px;" id="delete_btn" type="button" value="Delete">' +
+                '</div>' +
             '</div>' +
         '</div>';
     }

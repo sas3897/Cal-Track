@@ -29,22 +29,24 @@ $(document).ready(function(){
     });
 
     $("#cal_entries_table").on('click', '.cal_entry_del', function(){
-        let cal_entry_id = $(this).closest(".cal_row").attr("id");
-        $.ajax({
-            type: 'post',
-            url: 'del_calorie_entry',
-            data: {entry_id: cal_entry_id},
-            dataType: 'json',
-        })
-        .done(function(statusMsg){
-            if(statusMsg.status != "error"){
-                prev_timespan = '';
-                $("input[name='timespan']:checked").trigger('change');
-            }
-            else{
-                alert("Failed to delete entry.");
-            }
-        });
+        if(confirm("Are you sure you want to delete this entry?")){
+            let cal_entry_id = $(this).closest(".cal_row").attr("id");
+            $.ajax({
+                type: 'post',
+                url: 'del_calorie_entry',
+                data: {entry_id: cal_entry_id},
+                dataType: 'json',
+            })
+            .done(function(statusMsg){
+                if(statusMsg.status != "error"){
+                    prev_timespan = '';
+                    $("input[name='timespan']:checked").trigger('change');
+                }
+                else{
+                    alert("Failed to delete entry.");
+                }
+            });
+        }
     });
 
     $.ajax({

@@ -32,7 +32,8 @@ let table_scripts_map = new Map([
     //Fat, carbs, etc. are in grams
     ["create_ingredient_servings",
         `CREATE TABLE IF NOT EXISTS ingredient_servings(
-        ingredient_name TEXT NOT NULL PRIMARY KEY,
+        ingredient_id INTEGER NOT NULL PRIMARY KEY,
+        ingredient_name TEXT NOT NULL,
         calories REAL NOT NULL,
         fat REAL NOT NULL,
         carb REAL NOT NULL,
@@ -41,11 +42,11 @@ let table_scripts_map = new Map([
     ],
     ["create_ingredient_units",
         `CREATE TABLE IF NOT EXISTS ingredient_serving_units(
-        ingredient_name TEXT NOT NULL,
+        ingredient_id INTEGER NOT NULL,
         unit TEXT NOT NULL,
         amount REAL NOT NULL, 
-        FOREIGN KEY (ingredient_name) REFERENCES ingredient_servings(ingredient_name),
-        PRIMARY KEY (ingredient_name, unit, amount));`
+        FOREIGN KEY (ingredient_id) REFERENCES ingredient_servings(ingredient_id),
+        PRIMARY KEY (ingredient_id, unit, amount));`
     ],
     ["create_recipes", 
         `CREATE TABLE IF NOT EXISTS recipes(
