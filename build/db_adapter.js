@@ -280,4 +280,15 @@ module.exports = {
             callback("");
         });
     },
+    delRecipe: function (recipe_name, callback) {
+        let del_recipe_query = "DELETE FROM recipes " +
+            "WHERE recipe_name=?";
+        db.run(del_recipe_query, [recipe_name], function (err) {
+            if (err) {
+                callback(err);
+                return console.log(err.message);
+            }
+            callback("");
+        });
+    },
 };

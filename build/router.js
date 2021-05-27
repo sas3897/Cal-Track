@@ -226,6 +226,16 @@ server.post("/del_meal", function (req, res) {
         }
     });
 });
+server.post("/del_recipe", function (req, res) {
+    sqlite.delRecipe(req.body.recipe_name, function (err) {
+        if (err) {
+            res.send({ status: "error" });
+        }
+        else {
+            res.send({ status: "success" });
+        }
+    });
+});
 function is_logged_in(req) {
     //Is there a username, or no?
     return req.cookies.username !== undefined;

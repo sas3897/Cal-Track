@@ -48,6 +48,7 @@ let table_scripts_map = new Map([
         FOREIGN KEY (ingredient_id) REFERENCES ingredient_servings(ingredient_id),
         PRIMARY KEY (ingredient_id, unit, amount));`
     ],
+    //TODO split this up into two tables, one (id, recipe_name) and one (id, ing_id, ing_ratio) w/ an f-key
     ["create_recipes", 
         `CREATE TABLE IF NOT EXISTS recipes(
         id INTEGER NOT NULL PRIMARY KEY,

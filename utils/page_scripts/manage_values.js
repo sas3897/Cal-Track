@@ -560,6 +560,9 @@ $(document).ready(function(){
         let ingredients_container = $("tbody[id='ingredients_container']"); 
         let nutrient_ids = ["calories", "fat", "carb", "fiber", "protein"];
         let recipe_name_input = $("#recipe_name_input");
+        let select_id = "existing_select"
+        let recipe_del_btn = $("#delete_btn");
+        recipe_del_btn.hide();
 
         $.ajax({
             type: 'get',
@@ -567,7 +570,6 @@ $(document).ready(function(){
             dataType: 'json'
         })
         .done(function(recipe_list){
-            let select_id = "existing_select"
             let recipe_select = `<select id='${select_id}'><option value='none'>[New Recipe]</option>`;
             for(let recipe_obj of recipe_list){
                 let recipe_name = recipe_obj.recipe_name;
@@ -598,12 +600,15 @@ $(document).ready(function(){
                 if(recipe == "none"){
                     recipe_name_input.val("");
                     name_container.show();
+                    recipe_del_btn.hide();
 
                     update_totals();
                 }
                 else{
                     recipe_name_input.val(recipe);
                     name_container.hide();
+                    recipe_del_btn.show();
+
                     $.ajax({
                         type: 'post',
                         url: '/get_recipe_ingredients',
@@ -702,6 +707,30 @@ $(document).ready(function(){
             else{
                 alert("One non-zero amount of an ingredient is required.");
             }
+        });
+
+        recipe_del_btn.on("click", function(){
+            let selected_recipe =  $(`#${select_id} option:selected`);
+            let recipe_name = selected_recipe.text();
+            $.ajax({
+                type: 'post',
+                url: '/del_recipe',
+                data: {
+                    recipe_name : recipe_name
+                },
+                dataType: 'json'
+            })
+            .done(function(statusMsg){
+                if(statusMsg.status != "error"){
+                    selected_recipe.remove();
+                    let select = $(`select[id='${select_id}']`);
+                    select.val("none");
+                    select.trigger("change");
+                }
+                else{
+                    alert("Failed to delete ingredient.");
+                }
+            });
         });
     }
 
