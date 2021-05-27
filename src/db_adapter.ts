@@ -284,11 +284,25 @@ module.exports = {
             callback("");
         });
     },
+    //TODO shift to using ingredient_id
     delIngredient: function(ingredient_name:string, callback:any){
         let del_ing_query = 
             "DELETE FROM ingredient_servings " + 
             "WHERE ingredient_name=?";
         db.run(del_ing_query, [ingredient_name], function(err:any){
+            if(err){
+                callback(err);
+                return console.log(err.message);
+            }
+
+            callback("");
+        });
+    },
+    delMeal: function(meal_id:number, callback:any){
+        let del_meal_query = 
+            "DELETE FROM meals " + 
+            "WHERE meal_id=?";
+        db.run(del_meal_query, [meal_id], function(err:any){
             if(err){
                 callback(err);
                 return console.log(err.message);

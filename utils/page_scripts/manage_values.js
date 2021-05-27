@@ -325,7 +325,10 @@ $(document).ready(function(){
         let existing_container = $("div[id='existing_container']");
         let ingredients_container = $("tbody[id='ingredients_container']"); 
         let nutrient_ids = ["calories", "fat", "carb", "fiber", "protein"];
+        let select_id = "existing_select";
         let meal_name_input = $("#meal_name_input");
+        let meal_del_btn = $("#delete_btn"); 
+        meal_del_btn.hide();
 
         $.ajax({
             type: 'get',
@@ -347,7 +350,6 @@ $(document).ready(function(){
             dataType: 'json'
         })
         .done(function(meal_list){
-            let select_id = "existing_select";
             let meal_select = `<select id='${select_id}'><option value='none'>[New Meal]</option>`;
             for(let meal_obj of meal_list){
                 meal_select += `<option value='${meal_obj.meal_id}'>${meal_obj.meal_name}</option>`;
@@ -378,6 +380,7 @@ $(document).ready(function(){
                     meal_name_input.val("");
                     name_container.show();
                     ing_options_container.show();
+                    meal_del_btn.hide();
                     $("#meal_weight_input").val("")
                     $("#calories_total").text(0);
                     $("#fat_total").text(0);
@@ -388,6 +391,7 @@ $(document).ready(function(){
                 else{
                     name_container.hide();
                     ing_options_container.hide();
+                    meal_del_btn.show();
                     $.ajax({
                         type: 'post',
                         url: '/get_meal',
@@ -460,6 +464,31 @@ $(document).ready(function(){
                 }
                 else{
                     $("#warning_container").hide();
+                }
+            });
+        });
+
+        meal_del_btn.on("click", function(){
+            let selected_meal =  $(`#${select_id} option:selected`);
+            let meal_id = selected_meal.val();
+            console.log(meal_id);
+            $.ajax({
+                type: 'post',
+                url: '/del_meal',
+                data: {
+                    meal_id : meal_id
+                },
+                dataType: 'json'
+            })
+            .done(function(statusMsg){
+                if(statusMsg.status != "error"){
+                    selected_meal.remove();
+                    let select = $(`select[id='${select_id}']`);
+                    select.val("none");
+                    select.trigger("change");
+                }
+                else{
+                    alert("Failed to delete meal.");
                 }
             });
         });

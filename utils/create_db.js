@@ -71,10 +71,12 @@ let table_scripts_map = new Map([
 ]);
 
 let index_scripts_map = new Map([
+    //TODO update these to use ingredient_id instead
     ["servings_index", 
         `CREATE INDEX IF NOT EXISTS servings_index 
         ON ingredient_servings(ingredient_name);`
     ],
+    //TODO update these to use ingredient_id instead
     ["serving_units_index", 
         `CREATE INDEX IF NOT EXISTS serving_units_index 
         ON ingredient_serving_units(ingredient_name);`
