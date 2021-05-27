@@ -155,6 +155,13 @@ $(document).ready(function(){
     });
 
     $("#submit_entry_btn").on('click', function(e){
+        let remaining_weight_map = {};
+        for(let meal_name of Object.keys(meal_ratio_map)){
+            remaining_weight_map[meal_name] = 
+                meal_ratio_map[meal_name]['amount'] 
+                - parseFloat($(`[id='${meal_name}'] #amount`).val());
+        }
+
         $.ajax({
             type: 'post',
             url: '/enter_cal_entry',
@@ -169,8 +176,8 @@ $(document).ready(function(){
                 update_totals();
             }
         });
-        for(let meal_name of Object.keys(meal_ratio_map)){
-            let remaining_weight = meal_ratio_map[meal_name]['amount'] - parseFloat($(`[id='${meal_name}'] #amount`).val());
+        for(let meal_name of Object.keys(remaining_weight_map)){
+            let remaining_weight = remaining_weight_map[meal_name];
             $.ajax({
                 type: 'post',
                 url: '/add_meal',
